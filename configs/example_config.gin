@@ -1,0 +1,8 @@
+# You can comment like this
+
+# You can feed params to functions and classes like this
+my_function.function_arg_name = 10
+my_class.class_arg_name = 'Halo'
+
+# As long as functions and classes all have unique names, you don't have to worry about 
+# what python file they are defined in. It will figure this out alone
