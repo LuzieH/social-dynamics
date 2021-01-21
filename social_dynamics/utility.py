@@ -1,8 +1,9 @@
 from typing import List
 import gin
-from . import agent_network
+from social_dynamics import agent_networks
 
 
+IMPLEMENTED_MODELS = ['general_opinion_dynamics']
 
 def load_gin_configs(gin_files: List[str], gin_bindings: List[str]) -> None:
     """Loads gin configuration files.
@@ -25,12 +26,14 @@ def load_gin_configs(gin_files: List[str], gin_bindings: List[str]) -> None:
 
 
 @gin.configurable
-def setup_network() -> agent_network.AgentNetwork:
-    raise NotImplementedError()
+def setup_network(model: str) -> agent_networks.agent_network.AgentNetwork:
+    if model == 'general_opinion_dynamics':
+        return agent_networks.god_agent_network.GODAgentNetwork()
+    raise ValueError('Expected argument "model" to be a string in {}'.format(IMPLEMENTED_MODELS))
 
 
 @gin.configurable
-def compute_metrics(agent_network):
+def compute_metrics(agent_network: agent_networks.agent_network.AgentNetwork):
     raise NotImplementedError()
 
 

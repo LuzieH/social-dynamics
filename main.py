@@ -7,7 +7,7 @@ from absl import logging
 
 import gin
 
-from . import utility
+from social_dynamics import utility
 
 
 
@@ -57,13 +57,15 @@ def run_experiment(
         # Checkpointing and flushing summaries
         if t % checkpoint_interval == 0:
             # checkpoint current state. Do we even need to do this?
-            pass
+            data = save_updated_data(data, agent_network)
 
-        # Evaluation Run
         if t % metrics_interval == 0:
             # Compute the metrics
             metrics = utility.compute_metrics(agent_network)
             utility.save_metrics(metrics, experiment_dir)
+    
+    save_data(data)
+
 
 def main(_) -> None:
     logging.set_verbosity(logging.INFO)
