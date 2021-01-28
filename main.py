@@ -1,5 +1,7 @@
 import os
 import time
+from typing import List
+import numpy as np
 
 from absl import app
 from absl import flags
@@ -8,6 +10,7 @@ from absl import logging
 import gin
 
 from social_dynamics import utility
+from social_dynamics.metrics import metric
 
 
 
@@ -28,9 +31,10 @@ def run_experiment(
         root_dir: str,
         experiment_name: str,
         num_time_steps: int,
+        metrics: List[metric.Metric],
         checkpoint_interval: int,
         metrics_interval: int,
-        random_seed: int = None
+        # random_seed: int = None
 ) -> None:
     """
     Runs the experiment
@@ -45,7 +49,9 @@ def run_experiment(
     root_dir = os.path.expanduser(root_dir)
     experiment_dir = os.path.join(root_dir, experiment_name)
 
-    # TODO create results directory
+    # TODO create code that supports running the same experiment multiple times and saving all results
+    if not os.path.isdir(experiment_dir):
+        os.mkdir(experiment_dir)
     # TODO use the random seed only if given. Make sure that it effects every source of randomness
     
     agent_network = utility.setup_network()
@@ -53,18 +59,14 @@ def run_experiment(
     for t in range(num_time_steps):
         
         agent_network.step()
-        
-        # Checkpointing and flushing summaries
-        if t % checkpoint_interval == 0:
-            # checkpoint current state. Do we even need to do this?
-            data = save_updated_data(data, agent_network)
 
         if t % metrics_interval == 0:
-            # Compute the metrics
-            metrics = utility.compute_metrics(agent_network)
-            utility.save_metrics(metrics, experiment_dir)
-    
-    save_data(data)
+            for metric in metrics:
+                metric(agent_network)
+        
+        if t % checkpoint_interval == 0:
+            for metric in metrics:
+                np.save('results_{}_t{}.npy'.format(metric.name(), t), metric.result())
 
 
 def main(_) -> None:
