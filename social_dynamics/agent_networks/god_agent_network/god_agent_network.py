@@ -1,4 +1,3 @@
-from typing import Callable
 import numpy as np
 import gin
 from social_dynamics.agent_networks import agent_network
@@ -12,7 +11,7 @@ class GODAgentNetwork(agent_network.AgentNetwork):
     def __init__(self, adjacency_matrix: np.ndarray, agents: np.ndarray, adjacency_tensor: np.ndarray,
                  resistance: np.ndarray, attention: np.ndarray, inputs: np.ndarray,
                  S1: ActivationFunction, S2: ActivationFunction, 
-                 time_interval: float = 0.01) -> None:
+                 time_interval: float = 0.01, noise_std: float = 0) -> None:
         """
         Args:
             adjacency_matrix: Defines the network structure and the influence params.
@@ -26,6 +25,8 @@ class GODAgentNetwork(agent_network.AgentNetwork):
             S1: First activation function for intra-opinion activations
             S2: Second activation functions for inter-opinion activations.
             time_interval: time step for the Euler method applied at every step() call.
+            noise_std: Standard deviation of the noise added to the computation of F 
+                        upon step() calls.
         """
         self._n_agents, self._n_options = agents.shape
         super().__init__(adjacency_matrix, agents)
@@ -36,6 +37,7 @@ class GODAgentNetwork(agent_network.AgentNetwork):
         self._S1 = S1
         self._S2 = S2
         self._time_interval = time_interval
+        self._noise_std = noise_std
         self._non_diag_bool_tensor = np.ones(shape=(self._n_agents, self._n_options, self._n_options), dtype=np.bool)
         for option in range(self._n_options): 
             self._non_diag_bool_tensor[:, option, option] = False
@@ -47,17 +49,16 @@ class GODAgentNetwork(agent_network.AgentNetwork):
         
         If time_interval arg is provided, it will use this instead of the object's self._time_interval attribute.
         """
+        t = time_interval or self._time_interval
         F = (-self._resistance*self._agents + 
              self._attention*(self._S1(np.einsum('ikj,kj->ij', np.einsum('...ii->...i', self._adjacency_tensor),
                                                  self._agents)) +
                               np.sum(self._S2(np.einsum('ikjl,kl->ijl', self._adjacency_tensor, self._agents)),
                                      axis=2, where=self._non_diag_bool_tensor)) + 
-             self._input)
+             self._input) * t  + np.random.normal(scale=self._noise_std)*(t**0.5)
         
         delta_z = F - np.mean(F, axis=1, keepdims=True)
         
-        if time_interval:
-            self._agents += time_interval*delta_z
-        else:
-            self._agents += self._time_interval*delta_z
+        self._agents += delta_z
+
 
