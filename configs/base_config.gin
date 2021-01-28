@@ -1,0 +1,51 @@
+# Agent Network parameters
+n_agents = 3
+n_options = 3
+alpha = 0.2
+beta = 0.1
+gamma = -0.1
+delta = 0.2
+d = 1
+u = 3
+b = 0
+time_interval = 0.01
+noise_scaling = 0
+
+# Activation Functions
+S1/activation_function_builder.a = 1
+S1/activation_function_builder.b = 1
+S1/activation_function_builder.c = 0
+S2/activation_function_builder.a = 0.5
+S2/activation_function_builder.b = 2
+S2/activation_function_builder.c = 0
+
+# Building Agent Network
+GODAgentNetwork.adjacency_matrix = @adjacency_matrix_builder()
+GODAgentNetwork.agents = @agents_builder()
+GODAgentNetwork.adjacency_tensor = @adjacency_tensor_builder()
+GODAgentNetwork.resistance = @resistance_builder()
+GODAgentNetwork.attention = @attention_builder()
+GODAgentNetwork.inputs = @inputs_builder()
+GODAgentNetwork.S1 = @S1/activation_function_builder()
+GODAgentNetwork.S2 = @S2/activation_function_builder()
+GODAgentNetwork.time_interval = %time_interval
+GODAgentNetwork.noise_scaling = %noise_scaling
+adjacency_matrix_builder.n_agents = %n_agents
+adjacency_tensor_builder.adjacency_matrix = @adjacency_matrix_builder()
+adjacency_tensor_builder.n_options = %n_options
+adjacency_tensor_builder.alpha = %alpha
+adjacency_tensor_builder.beta = %beta
+adjacency_tensor_builder.gamma = %gamma
+adjacency_tensor_builder.delta = %delta
+agents_builder.n_agents = %n_agents
+agents_builder.n_options = %n_options
+resistance_builder.n_agents = %n_agents
+resistance_builder.n_options = %n_options
+resistance_builder.d = %d
+attention_builder.n_agents = %n_agents
+attention_builder.n_options = %n_options
+attention_builder.u = %u
+inputs_builder.n_agents = %n_agents
+inputs_builder.n_options = %n_options
+inputs_builder.b = %b
+
