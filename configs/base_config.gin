@@ -1,3 +1,10 @@
+# Experiment Run
+checkpoint_interval = 100
+run_experiment.experiment_name = 'base'
+run_experiment.num_time_steps = 1000
+run_experiment.checkpoint_interval = %checkpoint_interval
+run_experiment.metrics_interval = 1
+
 # Agent Network parameters
 n_agents = 3
 n_options = 3
@@ -9,7 +16,7 @@ d = 1
 u = 3
 b = 0
 time_interval = 0.01
-noise_scaling = 0
+noise_std = 0
 
 # Activation Functions
 S1/activation_function_builder.a = 1
@@ -19,7 +26,13 @@ S2/activation_function_builder.a = 0.5
 S2/activation_function_builder.b = 2
 S2/activation_function_builder.c = 0
 
+# Metrics
+run_experiment.metrics = [@AgentMetric()]
+AgentMetric.buffer_size = %checkpoint_interval
+AgentMetric.shape = (%n_agents, %n_options)
+
 # Building Agent Network
+setup_network.model = 'general_opinion_dynamics'
 GODAgentNetwork.adjacency_matrix = @adjacency_matrix_builder()
 GODAgentNetwork.agents = @agents_builder()
 GODAgentNetwork.adjacency_tensor = @adjacency_tensor_builder()
