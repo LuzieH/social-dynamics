@@ -11,11 +11,11 @@ class AgentMetric(metric.Metric):
     def __init__(self, buffer_size: int, shape: Tuple[int], name: str ='AgentMetric') -> None:
         super().__init__(name=name)
         self._buffer_size = buffer_size
-        self._buffer = np.array(shape=(buffer_size, *shape))
+        self._buffer = np.zeros(shape=(buffer_size, *shape))
         self._cursor = 0
 
     def call(self, agent_network: AgentNetwork) -> None:
-        self._buffer[self._cursor] = agent_network.agents()
+        self._buffer[self._cursor] = agent_network.agents
         self._cursor = (self._cursor + 1) % self._buffer_size
     
     def reset(self) -> None:

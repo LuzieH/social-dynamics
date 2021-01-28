@@ -50,12 +50,13 @@ class GODAgentNetwork(agent_network.AgentNetwork):
         If time_interval arg is provided, it will use this instead of the object's self._time_interval attribute.
         """
         t = time_interval or self._time_interval
-        F = (-self._resistance*self._agents + 
+        F = ((-self._resistance*self._agents + 
              self._attention*(self._S1(np.einsum('ikj,kj->ij', np.einsum('...ii->...i', self._adjacency_tensor),
                                                  self._agents)) +
                               np.sum(self._S2(np.einsum('ikjl,kl->ijl', self._adjacency_tensor, self._agents)),
                                      axis=2, where=self._non_diag_bool_tensor)) + 
-             self._input) * t  + np.random.normal(scale=self._noise_std)*(t**0.5)
+             self._input)*t +
+             np.random.normal(scale=self._noise_std)*(t**0.5))
         
         delta_z = F - np.mean(F, axis=1, keepdims=True)
         

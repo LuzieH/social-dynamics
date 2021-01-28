@@ -5,20 +5,24 @@ import numpy as np
 
 class Metric(ABC):
     
-    def __init__(self) -> None:
-        pass
+    def __init__(self, name) -> None:
+        self._name = name
     
-    @abstractmethod()
+    @property
+    def name(self):
+        return self._name
+    
+    @abstractmethod
     def call(self, *args, **kwargs) -> None:
         """Accumulates statistics for the metric. Users should use __call__ instead."""
         pass
     
-    @abstractmethod()
+    @abstractmethod
     def reset(self) -> None:
         """Resets the values being tracked by the metric."""
         pass
     
-    @abstractmethod()
+    @abstractmethod
     def result(self) -> Union[np.ndarray, float]:
         """Computes and returns a final value for the metric."""
         pass

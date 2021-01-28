@@ -28,7 +28,7 @@ def load_gin_configs(gin_files: List[str], gin_bindings: List[str]) -> None:
 @gin.configurable
 def setup_network(model: str) -> agent_networks.agent_network.AgentNetwork:
     if model == 'general_opinion_dynamics':
-        return agent_networks.god_agent_network.GODAgentNetwork()
+        return agent_networks.god_agent_network.god_agent_network.GODAgentNetwork()
     raise ValueError('Expected argument "model" to be a string in {}'.format(IMPLEMENTED_MODELS))
 
 

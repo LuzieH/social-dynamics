@@ -17,9 +17,9 @@ class AgentNetwork(ABC):
         return self._agents
     
     def step(self, **kwargs) -> None:
-        self._step(self, **kwargs)
+        self._step(**kwargs)
     
-    @abstractmethod()
+    @abstractmethod
     def _step(self) -> None:
         pass
 
