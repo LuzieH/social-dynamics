@@ -1,12 +1,12 @@
 # Experiment Run
-checkpoint_interval = 100
+checkpoint_interval = 10000
 run_experiment.experiment_name = 'base'
-run_experiment.num_time_steps = 1000
+run_experiment.num_time_steps = 200000
 run_experiment.checkpoint_interval = %checkpoint_interval
 run_experiment.metrics_interval = 1
 
 # Agent Network parameters
-n_agents = 3
+n_agents = 10
 n_options = 3
 alpha = 0.2
 beta = 0.1
@@ -15,7 +15,7 @@ delta = 0.2
 d = 1
 u = 3
 b = 0
-time_interval = 0.01
+time_interval = 0.001
 noise_std = 0
 
 # Activation Functions
