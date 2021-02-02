@@ -52,11 +52,14 @@ def run_experiment(
     # TODO create code that supports running the same experiment multiple times and saving all results
     if not os.path.isdir(experiment_dir):
         os.makedirs(experiment_dir)
+    
+    for metric in metrics:
+        os.mkdir(os.path.join(experiment_dir, metric.name))
     # TODO use the random seed only if given. Make sure that it effects every source of randomness
     
     agent_network = utility.setup_network()
 
-    for t in range(num_time_steps):
+    for t in range(1, num_time_steps + 1):
         
         agent_network.step()
 
@@ -66,7 +69,7 @@ def run_experiment(
         
         if t % checkpoint_interval == 0:
             for metric in metrics:
-                np.save(os.path.join(experiment_dir, 'results_{}_t{}.npy'.format(metric.name, t)), metric.result())
+                np.save(os.path.join(experiment_dir, metric.name, 'results_t{}.npy'.format(t)), metric.result())
 
 
 def main(_) -> None:
