@@ -56,7 +56,7 @@ class GODAgentNetwork(agent_network.AgentNetwork):
                               np.sum(self._S2(np.einsum('ikjl,kl->ijl', self._adjacency_tensor, self._agents)),
                                      axis=2, where=self._non_diag_bool_tensor)) + 
              self._input)*t +
-             np.random.normal(scale=self._noise_std)*(t**0.5))
+             np.random.normal(size=(self._n_agents, self._n_options), scale=self._noise_std)*(t**0.5))
         
         delta_z = F - np.mean(F, axis=1, keepdims=True)
         
