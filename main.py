@@ -34,7 +34,7 @@ def run_experiment(
         metrics: List[metric.Metric],
         checkpoint_interval: int,
         metrics_interval: int,
-        # random_seed: int = None
+        random_seed: int = None
 ) -> None:
     """
     Runs the experiment
@@ -55,7 +55,8 @@ def run_experiment(
     
     for metric in metrics:
         os.mkdir(os.path.join(experiment_dir, metric.name))
-    # TODO use the random seed only if given. Make sure that it effects every source of randomness
+    
+    np.random.seed(random_seed)
     
     agent_network = utility.setup_network()
 
