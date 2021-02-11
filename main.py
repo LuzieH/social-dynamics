@@ -34,7 +34,8 @@ def run_experiment(
         metrics: List[metric.Metric],
         checkpoint_interval: int,
         metrics_interval: int,
-        random_seed: int = None
+        random_seed: int = None, 
+        random_state: tuple = None
 ) -> None:
     """
     Runs the experiment
@@ -61,7 +62,13 @@ def run_experiment(
     for metric in metrics:
         os.mkdir(os.path.join(experiment_run_dir, metric.name))
     
-    np.random.seed(random_seed)
+    if random_state is not None:
+        np.random.set_state(random_state)
+    else:
+        np.random.seed(random_seed)
+    
+    random_state = np.random.get_state()
+    np.save(os.path.join(experiment_run_dir, 'initial_random_state.npy'), np.array(random_state, dtype='object'))
     
     agent_network = utility.setup_network()
 
