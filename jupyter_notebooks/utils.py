@@ -9,6 +9,7 @@ from typing import Dict
 def load_metrics(experiment_dir: str) -> Dict[str, np.ndarray]:
     metrics_results = dict()
     for metric in os.listdir(experiment_dir):
+        if metric == 'initial_random_state.npy': continue
         folder = os.path.join(experiment_dir, metric)
         # Sorting files by modification date. This is done because under lexicographic order
         # results at t = 1000 will come before those at t = 200, leading to incorrect concatenation.
