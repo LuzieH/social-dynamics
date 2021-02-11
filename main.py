@@ -48,13 +48,18 @@ def run_experiment(
     """
     root_dir = os.path.expanduser(root_dir)
     experiment_dir = os.path.join(root_dir, experiment_name)
-
-    # TODO create code that supports running the same experiment multiple times and saving all results
+    
+    
     if not os.path.isdir(experiment_dir):
-        os.makedirs(experiment_dir)
+        experiment_run_dir = os.path.join(experiment_dir, '0')
+        os.makedirs(experiment_run_dir)
+    else:
+        run_id = str(max([int(folder) for folder in os.listdir(experiment_dir)]) + 1)
+        experiment_run_dir = os.path.join(experiment_dir, run_id)
+        os.makedirs(experiment_run_dir)
     
     for metric in metrics:
-        os.mkdir(os.path.join(experiment_dir, metric.name))
+        os.mkdir(os.path.join(experiment_run_dir, metric.name))
     
     np.random.seed(random_seed)
     
@@ -70,7 +75,7 @@ def run_experiment(
         
         if t % checkpoint_interval == 0:
             for metric in metrics:
-                np.save(os.path.join(experiment_dir, metric.name, 'results_t{}.npy'.format(t)), metric.result())
+                np.save(os.path.join(experiment_run_dir, metric.name, 'results_t{}.npy'.format(t)), metric.result())
 
 
 def main(_) -> None:

@@ -17,7 +17,7 @@ As an example, in the folder above the cloned repo open a terminal and run:
 python social-dynamics/main.py --root_dir="experiments_results" --gin_files="social-dynamics/configs/base_config.gin"
 ```
 
-For more information on how to use gin-config you may visit the wiki of this repository.
+For more information on how to use Gin Config you may visit the wiki of this repository.
 \
 \
 \
