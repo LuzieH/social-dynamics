@@ -6,6 +6,7 @@ import numpy as np
 from absl import app
 from absl import flags
 from absl import logging
+from tqdm import tqdm
 
 import gin
 
@@ -35,7 +36,7 @@ def run_experiment(
         checkpoint_interval: int,
         metrics_interval: int,
         random_seed: int = None, 
-        random_state: tuple = None
+        random_state_path: str = None
 ) -> None:
     """
     Runs the experiment
@@ -43,10 +44,23 @@ def run_experiment(
     Args:
         root_dir - the directory where results for all experiments are saved 
                 (relative path based on where the terminal is located)
-        experiment_name - unique identifier for the experiment id which is used to make
+        experiment_name - unique identifier for the experiment configuration which is used to make
                 a results folder for this experiment run
+        num_time_steps - Number of time steps to simulate. The time interval between each of these
+                time steps is controlled by the AgentNetwork object (in the cases in which the 
+                model assumes the existence of a time interval)
+        metrics - List of metric.Metric instances to be keep track of any relevant data during simulation
+        checkpoint_interval - The number of time steps after which the data stored in the metrics is saved
+                a shorter interval decreases speed of the code while reducing memory footprint
+        metrics_interval - The interval for metrics' data collection. E.g. one might not be interested to
+                know the state of the network at every time step, but at every x time_steps. A longer interval
+                increases speed and reduces memory footprint (at the price of less data collected)
+        random_seed - Random seed to be used for replicability
+        random_state_path - Path to the random state to be loaded and used as seed for replicability
     
     """
+    assert (random_seed is None) or (random_state_path is None), ("Should not feed a random seed and a random state at the same time."
+                                                             " Only one of the two can be used at once")
     root_dir = os.path.expanduser(root_dir)
     experiment_dir = os.path.join(root_dir, experiment_name)
     
@@ -62,7 +76,8 @@ def run_experiment(
     for metric in metrics:
         os.mkdir(os.path.join(experiment_run_dir, metric.name))
     
-    if random_state is not None:
+    if random_state_path is not None:
+        random_state = tuple(np.load(random_state_path, allow_pickle=True))
         np.random.set_state(random_state)
     else:
         np.random.seed(random_seed)
@@ -72,7 +87,7 @@ def run_experiment(
     
     agent_network = utility.setup_network()
 
-    for t in range(1, num_time_steps + 1):
+    for t in tqdm(range(1, num_time_steps + 1)):
         
         agent_network.step()
 
