@@ -58,6 +58,7 @@ class GODAgentNetwork(agent_network.AgentNetwork):
              self._input)*t +
              np.random.normal(size=(self._n_agents, self._n_options), scale=self._noise_std)*(t**0.5))
         
+        
         delta_z = F - np.mean(F, axis=1, keepdims=True)
         
         self._agents += delta_z
