@@ -1,7 +1,7 @@
 import numpy as np
 import gin
 from social_dynamics.agent_networks import agent_network
-from social_dynamics.agent_networks.god_agent_network.builders import ActivationFunction
+from social_dynamics.agent_networks.luzie_agent_network.builders import ActivationFunction
 
 
 

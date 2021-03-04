@@ -1,0 +1,15 @@
+include "base_config.gin"
+
+
+setup_network.model = 'luzie_network'
+LuzieAgentNetwork.adjacency_matrix = @adjacency_matrix_builder()
+LuzieAgentNetwork.agents = @agents_builder()
+LuzieAgentNetwork.adjacency_tensor = @adjacency_tensor_builder()
+LuzieAgentNetwork.resistance = @resistance_builder()
+LuzieAgentNetwork.attention = @attention_builder()
+LuzieAgentNetwork.inputs = @inputs_builder()
+LuzieAgentNetwork.S1 = @S1/activation_function_builder()
+LuzieAgentNetwork.S2 = @S2/activation_function_builder()
+LuzieAgentNetwork.time_interval = %time_interval
+LuzieAgentNetwork.noise_std = %noise_std
+

@@ -60,7 +60,7 @@ def run_experiment(
     
     """
     assert (random_seed is None) or (random_state_path is None), ("Should not feed a random seed and a random state at the same time."
-                                                             " Only one of the two can be used at once")
+                                                                  " Only one of the two can be used at once")
     root_dir = os.path.expanduser(root_dir)
     experiment_dir = os.path.join(root_dir, experiment_name)
     
