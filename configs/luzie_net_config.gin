@@ -1,5 +1,6 @@
 include "base_config.gin"
 
+run_experiment.experiment_name = 'luzie_net'
 
 setup_network.model = 'luzie_network'
 LuzieAgentNetwork.adjacency_matrix = @adjacency_matrix_builder()

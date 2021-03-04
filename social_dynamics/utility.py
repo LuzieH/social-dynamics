@@ -30,7 +30,7 @@ def setup_network(model: str) -> agent_networks.agent_network.AgentNetwork:
     if model == 'general_opinion_dynamics':
         return agent_networks.god_agent_network.god_agent_network.GODAgentNetwork()
     elif model == 'luzie_network':
-        return agent_networks.luzie_agent_network.luzie_agent_network.LuzieAgentNetwork()
+        return agent_networks.god_agent_network.luzie_agent_network.LuzieAgentNetwork()
     raise ValueError('Expected argument "model" to be a string in {}'.format(IMPLEMENTED_MODELS))
 
 
