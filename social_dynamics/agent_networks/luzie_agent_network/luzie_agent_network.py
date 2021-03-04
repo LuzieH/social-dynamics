@@ -6,7 +6,7 @@ from social_dynamics.agent_networks.god_agent_network.builders import Activation
 
 
 @gin.configurable()
-class GODAgentNetwork(agent_network.AgentNetwork):
+class LuzieAgentNetwork(agent_network.AgentNetwork):
     
     def __init__(self, adjacency_matrix: np.ndarray, agents: np.ndarray, adjacency_tensor: np.ndarray,
                  resistance: np.ndarray, attention: np.ndarray, inputs: np.ndarray,
@@ -44,9 +44,9 @@ class GODAgentNetwork(agent_network.AgentNetwork):
     
     def _step(self, time_interval: float = None) -> None:
         """
-        Updates the General Opinion Dynamics Agent Network according to the model
-        presented in https://arxiv.org/abs/2009.04332. Euler method is used, with possibly added noise at
-        every time step.
+        Updates the General Opinion Dynamics Agent Network according to the model presented in
+        https://arxiv.org/abs/2009.04332 without enforcing the requirement that the average opinion of
+        an agent be 0. Euler method is used, with possibly added noise at every time step.
         
         If time_interval arg is provided, it will use this instead of the object's self._time_interval attribute.
         """
@@ -58,10 +58,7 @@ class GODAgentNetwork(agent_network.AgentNetwork):
                                      axis=2, where=self._non_diag_bool_tensor)) + 
              self._input)*t +
              np.random.normal(size=(self._n_agents, self._n_options), scale=self._noise_std)*(t**0.5))
-        
-        
-        delta_z = F - np.mean(F, axis=1, keepdims=True)
-        
-        self._agents += delta_z
+                
+        self._agents += F
 
 

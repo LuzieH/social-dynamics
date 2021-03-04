@@ -1,2 +1,3 @@
 from social_dynamics.agent_networks import agent_network
 from social_dynamics.agent_networks import god_agent_network
+from social_dynamics.agent_networks import luzie_agent_network
