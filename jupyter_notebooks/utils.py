@@ -2,7 +2,7 @@ import numpy as np
 import os
 from pathlib import Path
 import matplotlib.pyplot as plt
-from typing import Dict
+from typing import Dict, Optional
 import ternary
 
 
@@ -21,7 +21,7 @@ def load_metrics(experiment_dir: str) -> Dict[str, np.ndarray]:
     return metrics_results
 
 
-def plot_agents(options: np.ndarray, filename: str = None):
+def plot_agents_simpex(options: np.ndarray, filename: Optional[str] = None) -> None:
     _, ax = plt.subplots(figsize=(8, 8), dpi=150)
     _, tax = ternary.figure(ax=ax, scale=1.0)
     tax.boundary()
@@ -46,4 +46,32 @@ def plot_agents(options: np.ndarray, filename: str = None):
         plt.close()
         return
     tax.show()
+
+
+def plot_agents_option(agents: np.ndarray, filename: Optional[str] = None) -> None:
+    """
+    Plots the values across time for all options on different subplots.
+    
+    Args:
+        agents: A numpy array of values to be plotted. Shape=(n_time_steps, n_agents, n_options)
+        filename: Path to save the figure in instead of plotting it.
+    """
+    n_agents, n_options = agents.shape[1:]
+    
+    plt.figure(figsize=(14, 8))
+    for option in range(n_options):
+        plt.subplot(n_options, 1, option+1)
+        for agent in range(n_agents):
+            plt.plot(agents[:, agent, option], label=str(agent))
+            plt.legend()
+            plt.title("Option "+str(option))
+
+    plt.tight_layout()
+    
+    if filename is not None:
+        plt.savefig(filename)
+        plt.close()
+        return
+    
+    plt.show()
 
