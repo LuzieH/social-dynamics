@@ -131,5 +131,6 @@ dmypy.json
 # Yapf formatting configuration
 .style.yapf
 
-/jupyter_notebooks/*.gif
-/jupyter_notebooks/plots
+jupyter_notebooks/*.gif
+jupyter_notebooks/plots
+jupyter_notebooks/Debug.ipynb
