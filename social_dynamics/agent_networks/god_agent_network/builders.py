@@ -16,13 +16,13 @@ def activation_function_builder(a: float, b: float, c: float) -> ActivationFunct
 
 
 @gin.configurable()
-def adjacency_matrix_builder(n_agents: int):
+def complete_adjacency_matrix_builder(n_agents: int):
     adjacency_matrix = np.ones(shape=(n_agents, n_agents))
     return adjacency_matrix
 
 
 @gin.configurable()
-def adjacency_tensor_builder(adjacency_matrix: np.ndarray, n_options: int,
+def homogenous_adjacency_tensor_builder(adjacency_matrix: np.ndarray, n_options: int,
                              alpha: float, beta: float, gamma: float, delta: float):
     """
     Builds the adjacency tensor for the homogenous agents case presented in https://arxiv.org/abs/2009.04332.
@@ -47,26 +47,27 @@ def adjacency_tensor_builder(adjacency_matrix: np.ndarray, n_options: int,
 
 
 @gin.configurable()
-def agents_builder(n_agents: int, n_options: int):
+def homogenous_agents_builder(n_agents: int, n_options: int):
     agents = np.random.normal(size=(n_agents, n_options))
     agents -= np.mean(agents, axis=1, keepdims=True)
     return agents
 
 
 @gin.configurable()
-def resistance_builder(n_agents: int, n_options: int, d: float):
+def homogenous_resistance_builder(n_agents: int, n_options: int, d: float):
     resistance = np.ones(shape=(n_agents, n_options)) * d
     return resistance
 
 
 @gin.configurable()
-def attention_builder(n_agents: int, u: float):
+def homogenous_attention_builder(n_agents: int, u: float):
     attention = np.ones(shape=(n_agents, 1)) * u
     return attention
 
 
 @gin.configurable()
-def inputs_builder(n_agents: int, n_options: int, b: float):
+def homogenous_inputs_builder(n_agents: int, n_options: int, b: float):
     inputs = np.ones(shape=(n_agents, n_options)) * b
     return inputs
+
 
