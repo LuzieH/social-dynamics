@@ -64,7 +64,7 @@ def plot_agents_option(agents: np.ndarray, filename: Optional[str] = None) -> No
         for agent in range(n_agents):
             plt.plot(agents[:, agent, option], label=str(agent))
             plt.legend()
-            plt.title("Option "+str(option))
+            plt.title("Option "+ str(option+1))
 
     plt.tight_layout()
     
