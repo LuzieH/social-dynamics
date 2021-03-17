@@ -13,12 +13,10 @@ import gin
 from social_dynamics import utility
 from social_dynamics.metrics import metric
 
-
-
 flags.DEFINE_string('root_dir', os.getenv('TEST_UNDECLARED_OUTPUTS_DIR'),
-                    'Root directory for writing logs/summaries/checkpoints.')
+                    'Root directory for writing results of the metrics.')
 flags.DEFINE_multi_string('gin_files', [], 'List of paths to gin configuration files (e.g.'
-                          '"configs/hanabi_rainbow.gin").')
+                          '"configs/base_config.gin").')
 flags.DEFINE_multi_string(
     'gin_bindings', [], 'Gin bindings to override the values set in the config files '
     '(e.g. "train_eval.num_iterations=100").')
@@ -26,18 +24,15 @@ flags.DEFINE_multi_string(
 FLAGS = flags.FLAGS
 
 
-
 @gin.configurable
-def run_experiment(
-        root_dir: str,
-        experiment_name: str,
-        num_time_steps: int,
-        metrics: List[metric.Metric],
-        checkpoint_interval: int,
-        metrics_interval: int,
-        random_seed: int = None, 
-        random_state_path: str = None
-) -> None:
+def run_experiment(root_dir: str,
+                   experiment_name: str,
+                   num_time_steps: int,
+                   metrics: List[metric.Metric],
+                   checkpoint_interval: int,
+                   metrics_interval: int,
+                   random_seed: int = None,
+                   random_state_path: str = None) -> None:
     """
     Runs the experiment
     
@@ -59,12 +54,12 @@ def run_experiment(
         random_state_path - Path to the random state to be loaded and used as seed for replicability
     
     """
-    assert (random_seed is None) or (random_state_path is None), ("Should not feed a random seed and a random state at the same time."
-                                                                  " Only one of the two can be used at once")
+    assert (random_seed is None) or (random_state_path is None), (
+        "Should not feed a random seed and a random state at the same time."
+        " Only one of the two can be used at once")
     root_dir = os.path.expanduser(root_dir)
     experiment_dir = os.path.join(root_dir, experiment_name)
-    
-    
+
     if not os.path.isdir(experiment_dir):
         experiment_run_dir = os.path.join(experiment_dir, '0')
         os.makedirs(experiment_run_dir)
@@ -72,32 +67,34 @@ def run_experiment(
         run_id = str(max([int(folder) for folder in os.listdir(experiment_dir)]) + 1)
         experiment_run_dir = os.path.join(experiment_dir, run_id)
         os.makedirs(experiment_run_dir)
-    
+
     for metric in metrics:
         os.mkdir(os.path.join(experiment_run_dir, metric.name))
-    
+
     if random_state_path is not None:
         random_state = tuple(np.load(random_state_path, allow_pickle=True))
         np.random.set_state(random_state)
     else:
         np.random.seed(random_seed)
-    
+
     random_state = np.random.get_state()
-    np.save(os.path.join(experiment_run_dir, 'initial_random_state.npy'), np.array(random_state, dtype='object'))
-    
+    np.save(os.path.join(experiment_run_dir, 'initial_random_state.npy'),
+            np.array(random_state, dtype='object'))
+
     agent_network = utility.setup_network()
 
     for t in tqdm(range(1, num_time_steps + 1)):
-        
+
         agent_network.step()
 
         if t % metrics_interval == 0:
             for metric in metrics:
                 metric(agent_network)
-        
+
         if t % checkpoint_interval == 0:
             for metric in metrics:
-                np.save(os.path.join(experiment_run_dir, metric.name, 'results_t{}.npy'.format(t)), metric.result())
+                np.save(os.path.join(experiment_run_dir, metric.name, 'results_t{}.npy'.format(t)),
+                        metric.result())
 
 
 def main(_) -> None:
