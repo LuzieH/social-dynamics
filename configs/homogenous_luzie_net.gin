@@ -1,0 +1,53 @@
+# Experiment Run
+checkpoint_interval = 10000
+run_experiment.experiment_name = 'base'
+run_experiment.num_time_steps = 200000
+run_experiment.checkpoint_interval = %checkpoint_interval
+run_experiment.metrics_interval = 1
+
+# Agent Network parameters
+n_agents = 10
+n_options = 3
+alpha = 0.2
+beta = -0.5
+gamma = -0.1
+delta = 0.2
+d = 1
+u = 3
+v = 3
+b = 0
+time_interval = 0.001
+noise_std = 0
+
+# Activation Functions
+S1/activation_function_builder.a = 1
+S1/activation_function_builder.b = 1
+S1/activation_function_builder.c = 0
+S2/activation_function_builder.a = 0.5
+S2/activation_function_builder.b = 2
+S2/activation_function_builder.c = 0
+
+# Metrics
+run_experiment.metrics = [@AgentMetric()]
+AgentMetric.buffer_size = %checkpoint_interval
+AgentMetric.shape = (%n_agents, %n_options)
+
+# Building Agent Network
+setup_network.model = 'general_opinion_dynamics'
+LuzieAgentNetwork.adj_matrix_builder = @Luzie.complete_adjacency_matrix_builder
+LuzieAgentNetwork.agents_builder = @Luzie.random_normal_agent_builder
+LuzieAgentNetwork.parameters_builder = @Luzie.homogenous_parameters_builder
+LuzieAgentNetwork.time_interval = %time_interval
+LuzieAgentNetwork.noise_std = %noise_std
+Luzie.complete_adjacency_matrix_builder.n_agents = %n_agents
+Luzie.random_normal_agent_builder.n_agents = %n_agents
+Luzie.random_normal_agent_builder.n_options = %n_options
+Luzie.homogenous_parameters_builder.n_options = %n_options
+Luzie.homogenous_parameters_builder.alpha = %alpha
+Luzie.homogenous_parameters_builder.beta = %beta
+Luzie.homogenous_parameters_builder.gamma = %gamma
+Luzie.homogenous_parameters_builder.delta = %delta
+Luzie.homogenous_parameters_builder.d = %d
+Luzie.homogenous_parameters_builder.u = %u
+Luzie.homogenous_parameters_builder.v = %v
+Luzie.homogenous_parameters_builder.b = %b
