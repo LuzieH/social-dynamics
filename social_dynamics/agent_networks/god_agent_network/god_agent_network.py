@@ -16,27 +16,27 @@ class GODAgentNetwork(agent_network.AgentNetwork):
                  time_interval: float = 0.01,
                  noise_std: float = 0) -> None:
         """
+        Implementation of the model presented in https://arxiv.org/abs/2009.04332.
+        
         Args:
             adj_matrix_builder: Builds and returns the adjacency to be used by the
                         network object. This will define the network structure.
                         The adjacency matrix will have shape (n_agents, n_agents)
-            parameters_builder: Builds all the other parameters required to States for each agent. Shape = (n_agents, n_opinions)
-            resistance: Matrix of resistance params for every agent and opinion.
-                        Shape = (n_agents, n_opinions)
-            attention: Vector of attention params for every agent. Shape = (n_agents, 1)
-            inputs: Matrix of input params for every agent and opinion.
-                        Shape=(n_agents, n_opinions)
+            agents_builder: Builds and returns the initial state of all the agents.
+                        The agents' representation will have shape (n_agents, n_options)
+            parameters_builder: Builds all the other parameters required to update the model.
+                        Returns a dictionary containing all the necessary parameters.
             S1: First activation function for intra-opinion activations
             S2: Second activation functions for inter-opinion activations.
             time_interval: time step for the Euler method applied at every step() call.
             noise_std: Standard deviation of the noise added to the computation of F 
                         upon step() calls.
         """
-        
+
         adjacency_matrix = adj_matrix_builder()
         agents = agents_builder()
         params = parameters_builder(adjacency_matrix=adjacency_matrix)
-        
+
         self._adjacency_tensor = params["adjacency_tensor"]
         self._resistance = params["resistance"]
         self._attention = params["attention"]
@@ -54,8 +54,7 @@ class GODAgentNetwork(agent_network.AgentNetwork):
 
     def _step(self, time_interval: float = None) -> None:
         """
-        Updates the General Opinion Dynamics Agent Network according to the model
-        presented in https://arxiv.org/abs/2009.04332. Euler method is used, with possibly added noise at
+        Updates the General Opinion Dynamics Agent Network. Euler method is used, with possibly added noise at
         every time step.
         
         If time_interval arg is provided, it will use this instead of the object's self._time_interval attribute.

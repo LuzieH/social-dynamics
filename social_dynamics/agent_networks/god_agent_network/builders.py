@@ -2,7 +2,6 @@ import gin
 import numpy as np
 from typing import Callable, Dict
 
-
 ActivationFunction = Callable[[np.ndarray], np.ndarray]
 AdjMatrixBuilder = Callable[[int], np.ndarray]
 AgentsBuilder = Callable[[int, int], np.ndarray]
@@ -20,20 +19,27 @@ def activation_function_builder(a: float, b: float, c: float) -> ActivationFunct
 
 @gin.configurable(module="GOD")
 def complete_adjacency_matrix_builder(n_agents: int) -> np.ndarray:
+    """Builds an adjacency matrix of ones; corresponding to a complete network structure"""
     adjacency_matrix = np.ones(shape=(n_agents, n_agents))
     return adjacency_matrix
 
 
 @gin.configurable(module="GOD")
 def random_normal_agent_builder(n_agents: int, n_options: int) -> np.ndarray:
+    """
+    Initializes the states of all the agents using a Normal distribution.
+    It is enforced that the sum over options be 0 for every agent as per model definition
+    in https://arxiv.org/abs/2009.04332.
+    """
     agents = np.random.normal(size=(n_agents, n_options))
     agents -= np.mean(agents, axis=1, keepdims=True)
     return agents
 
 
 @gin.configurable(module="GOD")
-def homogenous_parameters_builder(adjacency_matrix: np.ndarray, n_options: int, alpha: float, beta: float, gamma: float,
-                       delta: float, d: float, u: float, b: float) -> Dict[str, np.ndarray]:
+def homogenous_parameters_builder(adjacency_matrix: np.ndarray, n_options: int, alpha: float, beta: float,
+                                  gamma: float, delta: float, d: float, u: float,
+                                  b: float) -> Dict[str, np.ndarray]:
     """
     Sets all the parameters and tensors to update a General Opinion Dynamics-style network.
     Follows the structure presented for the homogenous case in https://arxiv.org/abs/2009.04332.
@@ -56,12 +62,12 @@ def homogenous_parameters_builder(adjacency_matrix: np.ndarray, n_options: int, 
     resistance = np.ones(shape=(n_agents, n_options)) * d
     attention = np.ones(shape=(n_agents, 1)) * u
     inputs = np.ones(shape=(n_agents, n_options)) * b
-    
-    params = {"adjacency_tensor": adjacency_tensor,
-              "resistance": resistance,
-              "attention": attention,
-              "inputs": inputs,
-              }
+
+    params = {
+        "adjacency_tensor": adjacency_tensor,
+        "resistance": resistance,
+        "attention": attention,
+        "inputs": inputs,
+    }
 
     return params
-
