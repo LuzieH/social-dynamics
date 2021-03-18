@@ -49,10 +49,10 @@ def homogenous_builder(adjacency_matrix: np.ndarray, n_options: int, alpha: floa
 
     params = {
         "adjacency_tensor": adjacency_tensor,
-        "resistance": resistance,
-        "same_option_attention": same_option_attention,
-        "other_options_attention": other_options_attention,
-        "inputs": inputs
+        "d": resistance,
+        "u": same_option_attention,
+        "v": other_options_attention,
+        "b": inputs
     }
 
     return params

@@ -34,10 +34,10 @@ class LuzieAgentNetwork(agent_network.AgentNetwork):
         params = parameters_builder(adjacency_matrix=adjacency_matrix)
 
         self._adjacency_tensor = params["adjacency_tensor"]
-        self._resistance = params["resistance"]
-        self._same_option_attention = params["same_option_attention"]
-        self._other_options_attention = params["other_options_attention"]
-        self._input = params["inputs"]
+        self._d = params["d"]
+        self._u = params["u"]
+        self._v = params["v"]
+        self._b = params["b"]
         self._S = np.tanh
         super().__init__(adjacency_matrix, agents)
         self._n_agents, self._n_options = self.agents.shape
@@ -56,12 +56,12 @@ class LuzieAgentNetwork(agent_network.AgentNetwork):
         If time_interval arg is provided, it will use this instead of the object's self._time_interval attribute.
         """
         t = time_interval or self._time_interval
-        F = ((-self._resistance * self._agents
-              + self._same_option_attention * self._S(np.einsum('ikj,kj->ij', np.einsum('...ii->...i', self._adjacency_tensor),
-                                                                self._agents))
-              + self._other_options_attention * np.sum(self._S(np.einsum('ikjl,kl->ijl', self._adjacency_tensor, self._agents)),
-                                                       axis=2, where=self._non_diag_bool_tensor)
-              + self._input
+        F = ((-self._d * self._agents
+              + self._u * self._S(np.einsum('ikj,kj->ij', np.einsum('...ii->...i', self._adjacency_tensor),
+                                            self._agents))
+              + self._v * np.sum(self._S(np.einsum('ikjl,kl->ijl', self._adjacency_tensor, self._agents)),
+                                 axis=2, where=self._non_diag_bool_tensor)
+              + self._b
               ) * t
              + np.random.normal(size=(self._n_agents, self._n_options), scale=self._noise_std) * (t**0.5))
 

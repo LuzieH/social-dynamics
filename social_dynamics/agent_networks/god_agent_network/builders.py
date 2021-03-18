@@ -65,9 +65,9 @@ def homogenous_parameters_builder(adjacency_matrix: np.ndarray, n_options: int, 
 
     params = {
         "adjacency_tensor": adjacency_tensor,
-        "resistance": resistance,
-        "attention": attention,
-        "inputs": inputs,
+        "d": resistance,
+        "u": attention,
+        "b": inputs,
     }
 
     return params

@@ -38,9 +38,9 @@ class GODAgentNetwork(agent_network.AgentNetwork):
         params = parameters_builder(adjacency_matrix=adjacency_matrix)
 
         self._adjacency_tensor = params["adjacency_tensor"]
-        self._resistance = params["resistance"]
-        self._attention = params["attention"]
-        self._input = params["inputs"]
+        self._d = params["d"]
+        self._u = params["u"]
+        self._b = params["b"]
         self._S1 = S1
         self._S2 = S2
         super().__init__(adjacency_matrix, agents)
@@ -61,12 +61,13 @@ class GODAgentNetwork(agent_network.AgentNetwork):
         """
         t = time_interval or self._time_interval
         F = (
-            (-self._resistance * self._agents
-             + self._attention * (self._S1(np.einsum('ikj,kj->ij', np.einsum('...ii->...i', self._adjacency_tensor),
-                                                     self._agents))
-                                  + np.sum(self._S2(np.einsum('ikjl,kl->ijl', self._adjacency_tensor, self._agents)),
-                                           axis=2, where=self._non_diag_bool_tensor))
-             + self._input
+            (-self._d * self._agents
+             + self._u * (self._S1(np.einsum('ikj,kj->ij', np.einsum('...ii->...i', self._adjacency_tensor),
+                                             self._agents))
+                          + np.sum(self._S2(np.einsum('ikjl,kl->ijl', self._adjacency_tensor, self._agents)),
+                                   axis=2, where=self._non_diag_bool_tensor)
+                          )
+             + self._b
             ) * t
             + np.random.normal(size=(self._n_agents, self._n_options), scale=self._noise_std) * (t**0.5))
 
