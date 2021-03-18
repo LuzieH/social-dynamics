@@ -1,28 +1,26 @@
 import numpy as np
 import gin
 from social_dynamics.agent_networks import agent_network
-from social_dynamics.agent_networks.god_agent_network.builders import ActivationFunction
+from social_dynamics.agent_networks.god_agent_network.builders import ActivationFunction, AdjMatrixBuilder, AgentsBuilder, ParamsBuilder
 
 
 @gin.configurable()
 class GODAgentNetwork(agent_network.AgentNetwork):
 
     def __init__(self,
-                 adjacency_matrix: np.ndarray,
-                 agents: np.ndarray,
-                 adjacency_tensor: np.ndarray,
-                 resistance: np.ndarray,
-                 attention: np.ndarray,
-                 inputs: np.ndarray,
+                 adj_matrix_builder: AdjMatrixBuilder,
+                 agents_builder: AgentsBuilder,
+                 parameters_builder: ParamsBuilder,
                  S1: ActivationFunction,
                  S2: ActivationFunction,
                  time_interval: float = 0.01,
                  noise_std: float = 0) -> None:
         """
         Args:
-            adjacency_matrix: Defines the network structure and the influence params.
-                        Shape = (n_agents, n_agents, n_opinions, n_opinions)
-            agents: States for each agent. Shape = (n_agents, n_opinions)
+            adj_matrix_builder: Builds and returns the adjacency to be used by the
+                        network object. This will define the network structure.
+                        The adjacency matrix will have shape (n_agents, n_agents)
+            parameters_builder: Builds all the other parameters required to States for each agent. Shape = (n_agents, n_opinions)
             resistance: Matrix of resistance params for every agent and opinion.
                         Shape = (n_agents, n_opinions)
             attention: Vector of attention params for every agent. Shape = (n_agents, 1)
@@ -34,14 +32,19 @@ class GODAgentNetwork(agent_network.AgentNetwork):
             noise_std: Standard deviation of the noise added to the computation of F 
                         upon step() calls.
         """
-        self._n_agents, self._n_options = agents.shape
-        super().__init__(adjacency_matrix, agents)
-        self._adjacency_tensor = adjacency_tensor
-        self._resistance = resistance
-        self._attention = attention
-        self._input = inputs
+        
+        adjacency_matrix = adj_matrix_builder()
+        agents = agents_builder()
+        params = parameters_builder(adjacency_matrix=adjacency_matrix)
+        
+        self._adjacency_tensor = params["adjacency_tensor"]
+        self._resistance = params["resistance"]
+        self._attention = params["attention"]
+        self._input = params["inputs"]
         self._S1 = S1
         self._S2 = S2
+        super().__init__(adjacency_matrix, agents)
+        self._n_agents, self._n_options = self.agents.shape
         self._time_interval = time_interval
         self._noise_std = noise_std
         self._non_diag_bool_tensor = np.ones(shape=(self._n_agents, self._n_options, self._n_options),
