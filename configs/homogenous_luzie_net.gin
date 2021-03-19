@@ -19,18 +19,13 @@ b = 0
 time_interval = 0.001
 noise_std = 0
 
-# Activation Functions
-S1/activation_function_builder.a = 1
-S1/activation_function_builder.b = 1
-S1/activation_function_builder.c = 0
-S2/activation_function_builder.a = 0.5
-S2/activation_function_builder.b = 2
-S2/activation_function_builder.c = 0
-
 # Metrics
-run_experiment.metrics = [@AgentMetric()]
+run_experiment.metrics = [@AgentMetric(), @ConsensusMetric()]
 AgentMetric.buffer_size = %checkpoint_interval
 AgentMetric.shape = (%n_agents, %n_options)
+ConsensusMetric.buffer_size = %checkpoint_interval
+ConsensusMetric.n_options = %n_options
+ConsensusMetric.theta = 0.3
 
 # Building Agent Network
 setup_network.model = 'general_opinion_dynamics'
@@ -39,6 +34,8 @@ LuzieAgentNetwork.agents_builder = @Luzie.random_normal_agent_builder
 LuzieAgentNetwork.parameters_builder = @Luzie.homogenous_parameters_builder
 LuzieAgentNetwork.time_interval = %time_interval
 LuzieAgentNetwork.noise_std = %noise_std
+
+# Builders
 Luzie.complete_adjacency_matrix_builder.n_agents = %n_agents
 Luzie.random_normal_agent_builder.n_agents = %n_agents
 Luzie.random_normal_agent_builder.n_options = %n_options

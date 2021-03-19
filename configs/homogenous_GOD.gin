@@ -40,6 +40,8 @@ GODAgentNetwork.S1 = @S1/activation_function_builder()
 GODAgentNetwork.S2 = @S2/activation_function_builder()
 GODAgentNetwork.time_interval = %time_interval
 GODAgentNetwork.noise_std = %noise_std
+
+# Builders
 GOD.complete_adjacency_matrix_builder.n_agents = %n_agents
 GOD.random_normal_agent_builder.n_agents = %n_agents
 GOD.random_normal_agent_builder.n_options = %n_options
