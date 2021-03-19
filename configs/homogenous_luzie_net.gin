@@ -1,6 +1,6 @@
 # Experiment Run
 checkpoint_interval = 10000
-run_experiment.experiment_name = 'base'
+run_experiment.experiment_name = 'homogenous_luzie'
 run_experiment.num_time_steps = 200000
 run_experiment.checkpoint_interval = %checkpoint_interval
 run_experiment.metrics_interval = 1
