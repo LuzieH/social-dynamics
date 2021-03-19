@@ -14,7 +14,7 @@ Basic usage of the code is fairly simple and straight forward, simply run `main.
 
 As an example, in the folder above the cloned repo open a terminal and run:
 ```
-python social-dynamics/main.py --root_dir="experiments_results" --gin_files="social-dynamics/configs/base_config.gin"
+python social-dynamics/main.py --root_dir="experiments_results" --gin_files="social-dynamics/configs/homogenous_luzie_net.gin"
 ```
 
 For more information on how to use Gin Config you may visit the wiki of this repository.
