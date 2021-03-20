@@ -1,7 +1,7 @@
 from typing import List
 import gin
 from social_dynamics import agent_networks
-from social_dynamics.agent_networks import god_agent_network
+from social_dynamics.agent_networks import god_agent_network, luzie_agent_network
 
 IMPLEMENTED_MODELS = ['general_opinion_dynamics', 'luzie_network']
 
@@ -32,5 +32,5 @@ def setup_network(model: str) -> agent_networks.agent_network.AgentNetwork:
     if model == 'general_opinion_dynamics':
         return god_agent_network.god_agent_network.GODAgentNetwork()
     elif model == 'luzie_network':
-        return god_agent_network.luzie_agent_network.LuzieAgentNetwork()
+        return luzie_agent_network.luzie_agent_network.LuzieAgentNetwork()
     raise ValueError('Expected argument "model" to be a string in {}'.format(IMPLEMENTED_MODELS))
