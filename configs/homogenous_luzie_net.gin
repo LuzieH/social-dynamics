@@ -28,7 +28,7 @@ ConsensusMetric.n_options = %n_options
 ConsensusMetric.theta = 0.3
 
 # Building Agent Network
-setup_network.model = 'general_opinion_dynamics'
+setup_network.model = 'luzie_network'
 LuzieAgentNetwork.adj_matrix_builder = @Luzie.complete_adjacency_matrix_builder
 LuzieAgentNetwork.agents_builder = @Luzie.random_normal_agent_builder
 LuzieAgentNetwork.parameters_builder = @Luzie.homogenous_parameters_builder
