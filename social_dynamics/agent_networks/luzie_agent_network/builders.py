@@ -69,9 +69,6 @@ def agent_types_parameters_builder(adjacency_matrix: np.ndarray, n_options: int,
     to be used for that specific agent. The AgentTypes are dictionaries that define all the variables and constants
     to be used for that type of agent.
     """
-    
-    #MAKE A CHECK FOR NP.ARRAY (WHICH ARE ACTUALLY PASSED AS LISTS) PARAMS BEING INSTEAD PASSED AS FLOATS 
-    
     # Adjacency Tensor
     n_agents = adjacency_matrix.shape[0]
     adjacency_tensor = np.ones(shape=(n_agents, n_agents, n_options, n_options))
@@ -90,8 +87,8 @@ def agent_types_parameters_builder(adjacency_matrix: np.ndarray, n_options: int,
 
     # Update rule parameters
     resistance = np.ones(shape=(n_agents, n_options)) * [agent["d"] if isinstance(agent["d"], list) else [agent["d"]] for agent in agent_types]
-    same_option_attention = np.ones(shape=(n_agents, 1)) * [agent["u"] for agent in agent_types]
-    other_options_attention = np.ones(shape=(n_agents, 1)) * [agent["v"] for agent in agent_types]
+    same_option_attention = np.ones(shape=(n_agents, 1)) * [[agent["u"]] for agent in agent_types]
+    other_options_attention = np.ones(shape=(n_agents, 1)) * [[agent["v"]] for agent in agent_types]
     inputs = np.ones(shape=(n_agents, n_options)) * [agent["b"] if isinstance(agent["b"], list) else [agent["b"]] for agent in agent_types]
 
     params = {
