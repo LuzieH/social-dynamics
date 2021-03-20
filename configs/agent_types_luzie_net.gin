@@ -1,0 +1,37 @@
+# Experiment Run
+checkpoint_interval = 10000
+run_experiment.experiment_name = 'agent_types_luzie'
+run_experiment.num_time_steps = 200000
+run_experiment.checkpoint_interval = %checkpoint_interval
+run_experiment.metrics_interval = 1
+
+# Agent Network parameters
+n_agents = 10
+n_options = 3
+time_interval = 0.001
+noise_std = 0
+
+# Metrics
+run_experiment.metrics = [@AgentMetric(), @ConsensusMetric()]
+AgentMetric.buffer_size = %checkpoint_interval
+AgentMetric.shape = (%n_agents, %n_options)
+ConsensusMetric.buffer_size = %checkpoint_interval
+ConsensusMetric.n_options = %n_options
+ConsensusMetric.theta = 0.3
+
+# Building Agent Network
+setup_network.model = 'luzie_network'
+LuzieAgentNetwork.adj_matrix_builder = @Luzie.complete_adjacency_matrix_builder
+LuzieAgentNetwork.agents_builder = @Luzie.random_normal_agent_builder
+LuzieAgentNetwork.parameters_builder = @Luzie.agent_types_parameters_builder
+LuzieAgentNetwork.time_interval = %time_interval
+LuzieAgentNetwork.noise_std = %noise_std
+
+# Builders
+Luzie.complete_adjacency_matrix_builder.n_agents = %n_agents
+Luzie.random_normal_agent_builder.n_agents = %n_agents
+Luzie.random_normal_agent_builder.n_options = %n_options
+Luzie.agent_types_parameters_builder.n_options = %n_options
+Luzie.agent_types_parameters_builder.agent_types = [%agent_type_1, %agent_type_2, %agent_type_1, %agent_type_2,
+                                                    %agent_type_1, %agent_type_2, %agent_type_1, %agent_type_2,
+                                                    %agent_type_1, %agent_type_2]

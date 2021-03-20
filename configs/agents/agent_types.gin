@@ -1,0 +1,55 @@
+agent_type_1 = {
+    # same-option same-agent weight
+    "alpha": 0.2,
+
+    # other-option same-agent weight
+    "beta": 0.3,
+
+    # same-option other-agent weight
+    "gamma": -0.3,
+
+    # other-option other-agent weight
+    "delta": 0.5,
+
+    # Resistance (can be scalar or list of scalars)
+    "d": 1,
+
+    # same-option attention
+    "u": 0.3,
+
+    # other-option attention
+    "v": 0.3,
+
+    # Input (can be scalar or list of scalars)
+    "b": 0
+}
+
+
+
+agent_type_2 = {
+    # same-option same-agent weight
+    "alpha": 0.2,
+
+    # other-option same-agent weight
+    "beta": 0.3,
+
+    # same-option other-agent weight
+    "gamma": -0.3,
+
+    # other-option other-agent weight
+    "delta": 0.5,
+
+    # Resistance (can be scalar or list of scalars)
+    "d": 1,
+
+    # same-option attention
+    "u": 0.3,
+
+    # other-option attention
+    "v": 0.3,
+
+    # Input (can be scalar or list of scalars)
+    "b": 0
+}
+
+
