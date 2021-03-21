@@ -1,27 +1,15 @@
-import os
-import time
-from typing import List
-import numpy as np
-
 from absl import app
 from absl import flags
 from absl import logging
-from tqdm import tqdm
 
 import gin
+import numpy as np
+import os
+from tqdm import tqdm
+from typing import List, Optional
 
 from social_dynamics import utility
 from social_dynamics.metrics import metric
-
-flags.DEFINE_string('root_dir', os.getenv('TEST_UNDECLARED_OUTPUTS_DIR'),
-                    'Root directory for writing results of the metrics.')
-flags.DEFINE_multi_string('gin_files', [], 'List of paths to gin configuration files (e.g.'
-                          '"configs/base_config.gin").')
-flags.DEFINE_multi_string(
-    'gin_bindings', [], 'Gin bindings to override the values set in the config files '
-    '(e.g. "train_eval.num_iterations=100").')
-
-FLAGS = flags.FLAGS
 
 
 @gin.configurable
@@ -31,28 +19,27 @@ def run_experiment(root_dir: str,
                    metrics: List[metric.Metric],
                    checkpoint_interval: int,
                    metrics_interval: int,
-                   random_seed: int = None,
-                   random_state_path: str = None) -> None:
-    """
-    Runs the experiment
-    
+                   random_seed: Optional[int] = None,
+                   random_state_path: Optional[str] = None) -> None:
+    """Runs the experiment
+
     Args:
-        root_dir - the directory where results for all experiments are saved 
+        root_dir (str): The directory where results for all experiments are saved 
                 (relative path based on where the terminal is located)
-        experiment_name - unique identifier for the experiment configuration which is used to make
+        experiment_name (str): unique identifier for the experiment configuration which is used to make
                 a results folder for this experiment run
-        num_time_steps - Number of time steps to simulate. The time interval between each of these
+        num_time_steps (int): Number of time steps to simulate. The time interval between each of these
                 time steps is controlled by the AgentNetwork object (in the cases in which the 
                 model assumes the existence of a time interval)
-        metrics - List of metric.Metric instances to be keep track of any relevant data during simulation
-        checkpoint_interval - The number of time steps after which the data stored in the metrics is saved
+        metrics (List[metric.Metric]): List of metric.Metric instances to be keep track of any relevant data during simulation
+        checkpoint_interval (int): The number of time steps after which the data stored in the metrics is saved
                 a shorter interval decreases speed of the code while reducing memory footprint
-        metrics_interval - The interval for metrics' data collection. E.g. one might not be interested to
+        metrics_interval (int): The interval for metrics' data collection. E.g. one might not be interested to
                 know the state of the network at every time step, but at every x time_steps. A longer interval
                 increases speed and reduces memory footprint (at the price of less data collected)
-        random_seed - Random seed to be used for replicability
-        random_state_path - Path to the random state to be loaded and used as seed for replicability
-    
+        random_seed (Optional[int], optional): Random seed to be used for replicability. Defaults to None.
+        random_state_path (Optional[str], optional): Path to the random state to be loaded and used as seed for replicability.
+                Defaults to None.
     """
     assert (random_seed is None) or (random_state_path is None), (
         "Should not feed a random seed and a random state at the same time."
@@ -68,15 +55,12 @@ def run_experiment(root_dir: str,
         experiment_run_dir = os.path.join(experiment_dir, run_id)
         os.makedirs(experiment_run_dir)
 
-    for metric in metrics:
-        os.mkdir(os.path.join(experiment_run_dir, metric.name))
-
+    # Managing the random state for replicabiity purposes
     if random_state_path is not None:
         random_state = tuple(np.load(random_state_path, allow_pickle=True))
         np.random.set_state(random_state)
     else:
         np.random.seed(random_seed)
-
     random_state = np.random.get_state()
     np.save(os.path.join(experiment_run_dir, 'initial_random_state.npy'),
             np.array(random_state, dtype='object'))
@@ -93,8 +77,8 @@ def run_experiment(root_dir: str,
 
         if t % checkpoint_interval == 0:
             for metric in metrics:
-                np.save(os.path.join(experiment_run_dir, metric.name, 'results_t{}.npy'.format(t)),
-                        metric.result())
+                metric.save(save_path=experiment_run_dir, time_step=t)
+                metric.reset()
 
 
 def main(_) -> None:
@@ -104,5 +88,15 @@ def main(_) -> None:
 
 
 if __name__ == '__main__':
+    flags.DEFINE_string('root_dir', os.getenv('TEST_UNDECLARED_OUTPUTS_DIR'),
+                        'Root directory for writing results of the metrics.')
+    flags.DEFINE_multi_string(
+        'gin_files', [], 'List of paths to gin configuration files (e.g.'
+        '"configs/homogenous_luzie_net.gin").')
+    flags.DEFINE_multi_string(
+        'gin_bindings', [], 'Gin bindings to override the values set in the config files '
+        '(e.g. "run_experiment.random_seed=42").')
+    FLAGS = flags.FLAGS
     flags.mark_flag_as_required('root_dir')
+
     app.run(main)
