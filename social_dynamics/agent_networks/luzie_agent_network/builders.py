@@ -2,7 +2,7 @@ import gin
 import numpy as np
 from typing import Callable, Dict, List, Union
 
-AdjMatrixBuilder = Callable[[int], np.ndarray]
+AdjMatrixBuilder = Callable[..., np.ndarray]
 AgentsBuilder = Callable[[int, int], np.ndarray]
 ParamsBuilder = Callable[..., Dict[str, np.ndarray]]
 AgentType = Dict[str, Union[List[float], float]]
@@ -12,6 +12,11 @@ AgentType = Dict[str, Union[List[float], float]]
 def complete_adjacency_matrix_builder(n_agents: int) -> np.ndarray:
     """Builds an adjacency matrix of ones; corresponding to a complete network structure"""
     return np.ones(shape=(n_agents, n_agents))
+
+
+@gin.configurable(module="luzie")
+def custom_adjacency_matrix_builder(adj_matrix: List[List[Union[0,1]]]) -> np.ndarray:
+    return np.array(adj_matrix)
 
 
 @gin.configurable(module="Luzie")
