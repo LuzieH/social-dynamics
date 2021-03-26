@@ -12,12 +12,13 @@ time_interval = 0.001
 noise_std = 0
 
 # Metrics
-run_experiment.metrics = [@AgentMetric(), @ConsensusMetric()]
-AgentMetric.buffer_size = %checkpoint_interval
-AgentMetric.shape = (%n_agents, %n_options)
-ConsensusMetric.buffer_size = %checkpoint_interval
-ConsensusMetric.n_options = %n_options
-ConsensusMetric.theta = 0.3
+run_experiment.metrics = [@StateMetric(), @PopulationStateMetric()]
+StateMetric.buffer_size = %checkpoint_interval
+StateMetric.shape = (%n_agents, %n_options)
+PopulationStateMetric.buffer_size = %checkpoint_interval
+PopulationStateMetric.n_agents = %n_agents
+PopulationStateMetric.n_options = %n_options
+PopulationStateMetric.theta = 0.3
 
 # Building Agent Network
 setup_network.model = 'luzie_network'

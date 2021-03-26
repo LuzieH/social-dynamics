@@ -27,9 +27,9 @@ S2/activation_function_builder.b = 2
 S2/activation_function_builder.c = 0
 
 # Metrics
-run_experiment.metrics = [@AgentMetric()]
-AgentMetric.buffer_size = %checkpoint_interval
-AgentMetric.shape = (%n_agents, %n_options)
+run_experiment.metrics = [@StateMetric()]
+StateMetric.buffer_size = %checkpoint_interval
+StateMetric.shape = (%n_agents, %n_options)
 
 # Building Agent Network
 setup_network.model = 'general_opinion_dynamics'
