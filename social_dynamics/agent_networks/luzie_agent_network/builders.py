@@ -15,7 +15,7 @@ def complete_adjacency_matrix_builder(n_agents: int) -> np.ndarray:
 
 
 @gin.configurable(module="Luzie")
-def custom_adjacency_matrix_builder(adj_matrix: List[List[Union[0,1]]]) -> np.ndarray:
+def custom_adjacency_matrix_builder(adj_matrix: List[List[int]]) -> np.ndarray:
     return np.array(adj_matrix)
 
 
