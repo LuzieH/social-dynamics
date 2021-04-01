@@ -21,7 +21,7 @@ def load_metrics(experiment_dir: str) -> Dict[str, np.ndarray]:
     return metrics_results
 
 
-def plot_agents_simpex(options: np.ndarray, filename: Optional[str] = None) -> None:
+def plot_agents_simplex(options: np.ndarray, filename: Optional[str] = None) -> None:
     _, ax = plt.subplots(figsize=(8, 8), dpi=150)
     _, tax = ternary.figure(ax=ax, scale=1.0)
     tax.boundary()
