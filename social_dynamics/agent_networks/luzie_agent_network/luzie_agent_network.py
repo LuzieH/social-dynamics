@@ -3,6 +3,7 @@ import numpy as np
 import gin
 from social_dynamics.agent_networks import agent_network
 from social_dynamics.agent_networks.luzie_agent_network.builders import AdjMatrixBuilder, AgentsBuilder, ParamsBuilder
+from typing import Optional
 
 
 @gin.configurable()
@@ -14,7 +15,7 @@ class LuzieAgentNetwork(agent_network.AgentNetwork):
                  parameters_builder: ParamsBuilder,
                  time_interval: float = 0.01,
                  noise_std: float = 0,
-                 builders_kwargs: dict = defaultdict(dict)) -> None:
+                 builders_kwargs: Optional[dict] = None) -> None:
         """
         Implementation of Luzie's variation of the model presented in https://arxiv.org/abs/2009.04332.
         
@@ -30,6 +31,8 @@ class LuzieAgentNetwork(agent_network.AgentNetwork):
             noise_std: Standard deviation of the noise added to the computation of F 
                         upon step() calls.
         """
+        if builders_kwargs is None:
+            builders_kwargs = defaultdict(dict)
         # Parameters for the builders are usually passed via Gin Config
         adjacency_matrix = adj_matrix_builder(**builders_kwargs["adj_matrix_builder_kwargs"])
         agents = agents_builder(**builders_kwargs["agents_builder_kwargs"])
