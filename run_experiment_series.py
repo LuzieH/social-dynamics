@@ -92,7 +92,8 @@ def run_experiment_series(root_dir: str,
         for delta in np.linspace(-2, 2, 21):
             agent_network = LuzieAgentNetwork(builders_kwargs={"adj_matrix_builder_kwargs": dict(),
                                                                "agents_builder_kwargs": dict(),
-                                                               "parameters_builder_kwargs": dict()
+                                                               "parameters_builder_kwargs": {"gamma": gamma,
+                                                                                             "delta": delta}
                                                                })
             experiment_name = f"{gamma}gamma_{delta}delta"
             run_experiment(series_dir=series_dir,
