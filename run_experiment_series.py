@@ -58,6 +58,7 @@ def run_experiment(series_dir: str,
 
 
 def run_experiment_series(root_dir: str,
+                          series_name: str,
                           random_seed: Optional[int] = None,
                           random_state_path: Optional[str] = None) -> None:
     """Runs a series of experiments iterating through certain parameters as determined by the customizable
@@ -74,7 +75,7 @@ def run_experiment_series(root_dir: str,
         "Should not feed a random seed and a random state at the same time."
         " Only one of the two can be used at once")
     root_dir = os.path.expanduser(root_dir)
-    series_dir = os.path.join(root_dir, "homogenous_luzie_gamma_delta_exploration")
+    series_dir = os.path.join(root_dir, series_name)
     if not os.path.isdir(series_dir):
         os.makedirs(series_dir)
 
@@ -95,7 +96,7 @@ def run_experiment_series(root_dir: str,
                                                                "parameters_builder_kwargs": {"gamma": gamma,
                                                                                              "delta": delta}
                                                                })
-            experiment_name = f"{gamma}gamma_{delta}delta"
+            experiment_name = "{}gamma_{}delta".format(np.round(gamma, 1), np.round(delta, 1))
             run_experiment(series_dir=series_dir,
                            experiment_name=experiment_name,
                            agent_network=agent_network)
@@ -106,12 +107,14 @@ def main(_) -> None:
     logging.set_verbosity(logging.INFO)
     utility.load_gin_configs(FLAGS.gin_files, FLAGS.gin_bindings)
     
-    run_experiment_series(root_dir=FLAGS.root_dir)
+    run_experiment_series(root_dir=FLAGS.root_dir, series_name=FLAGS.series_name)
 
 
 if __name__ == '__main__':
     flags.DEFINE_string('root_dir', os.getenv('TEST_UNDECLARED_OUTPUTS_DIR'),
                         'Root directory for writing results of the metrics.')
+    flags.DEFINE_string('series_name', os.getenv('TEST_UNDECLARED_OUTPUTS_DIR'),
+                        'Name to identify the experiment series')
     flags.DEFINE_multi_string(
         'gin_files', [], 'List of paths to gin configuration files (e.g.'
         '"configs/homogenous_luzie_net.gin").')
