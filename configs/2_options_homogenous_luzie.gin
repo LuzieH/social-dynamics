@@ -1,0 +1,3 @@
+include "homogenous_luzie_net.gin"
+
+n_options = 2
