@@ -16,7 +16,6 @@ from social_dynamics.metrics import metric
 def run_experiment(root_dir: str,
                    experiment_name: str,
                    num_time_steps: int,
-                   metrics: List[metric.Metric],
                    checkpoint_interval: int,
                    metrics_interval: int,
                    random_seed: Optional[int] = None,
@@ -31,7 +30,6 @@ def run_experiment(root_dir: str,
         num_time_steps (int): Number of time steps to simulate. The time interval between each of these
                 time steps is controlled by the AgentNetwork object (in the cases in which the 
                 model assumes the existence of a time interval)
-        metrics (List[metric.Metric]): List of metric.Metric instances to be keep track of any relevant data during simulation
         checkpoint_interval (int): The number of time steps after which the data stored in the metrics is saved
                 a shorter interval decreases speed of the code while reducing memory footprint
         metrics_interval (int): The interval for metrics' data collection. E.g. one might not be interested to
@@ -66,6 +64,8 @@ def run_experiment(root_dir: str,
             np.array(random_state, dtype='object'))
 
     agent_network = utility.setup_network()
+    metrics = utility.setup_metrics(checkpoint_interval=checkpoint_interval,
+                                    metrics_interval=metrics_interval)
 
     for t in tqdm(range(1, num_time_steps + 1)):
 

@@ -11,7 +11,7 @@ from social_dynamics.metrics import metric
 class StateMetric(metric.Metric):
 
     def __init__(self, buffer_size: int, shape: Tuple[int], name: str = 'StateMetric') -> None:
-        super().__init__(name=name)
+        super().__init__(name=name, buffer_size=buffer_size)
         self._buffer_size = buffer_size
         self._buffer = np.zeros(shape=(buffer_size, *shape))
         self._cursor = 0
@@ -44,7 +44,7 @@ class PopulationStateMetric(metric.Metric):
         This metric expects to be called on AgentNetwork objects whose agents attribute
         has shape (n_agents, n_options)
         """
-        super().__init__(name=name)
+        super().__init__(name=name, buffer_size=buffer_size)
         self._buffer_size = buffer_size
         self._agreement_buffer = np.zeros(shape=(buffer_size, n_options))
         self._consensus_buffer = np.zeros(shape=(buffer_size,))

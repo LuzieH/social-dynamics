@@ -5,8 +5,9 @@ import numpy as np
 
 class Metric(ABC):
 
-    def __init__(self, name) -> None:
+    def __init__(self, name: str, buffer_size: int) -> None:
         self._name = name
+        self._buffer_size = buffer_size
 
     @property
     def name(self) -> str:

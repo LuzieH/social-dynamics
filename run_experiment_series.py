@@ -20,19 +20,17 @@ def run_experiment(series_dir: str,
                    experiment_name: str,
                    num_time_steps: int,
                    agent_network: AgentNetwork,
-                   metrics: List[metric.Metric],
                    checkpoint_interval: int,
                    metrics_interval: int) -> None:
     """Runs a single experiment in the series. Saves the results of the metrics 
 
     Args:
-        series_dir (str): 
+        series_dir (str): Identifier of the series of experiments that is being run.
         experiment_name (str): unique identifier for the experiment configuration which is used to make
                 a results folder for this experiment run
         num_time_steps (int): Number of time steps to simulate. The time interval between each of these
                 time steps is controlled by the AgentNetwork object (in the cases in which the 
                 model assumes the existence of a time interval)
-        metrics (List[metric.Metric]): List of metric.Metric instances to be keep track of any relevant data during simulation
         checkpoint_interval (int): The number of time steps after which the data stored in the metrics is saved
                 a shorter interval decreases speed of the code while reducing memory footprint
         metrics_interval (int): The interval for metrics' data collection. E.g. one might not be interested to
@@ -42,6 +40,9 @@ def run_experiment(series_dir: str,
     experiment_dir = os.path.join(series_dir, experiment_name)
     if not os.path.isdir(experiment_dir):
         os.makedirs(experiment_dir)
+    
+    metrics = utility.setup_metrics(checkpoint_interval=checkpoint_interval,
+                                    metrics_interval=metrics_interval)
     
     for t in range(1, num_time_steps + 1):
 
@@ -89,17 +90,23 @@ def run_experiment_series(root_dir: str,
     np.save(os.path.join(series_dir, 'initial_random_state.npy'),
             np.array(random_state, dtype='object'))
     
-    for gamma in tqdm(np.linspace(-2, 2, 21)):
-        for delta in np.linspace(-2, 2, 21):
-            agent_network = LuzieAgentNetwork(builders_kwargs={"adj_matrix_builder_kwargs": dict(),
-                                                               "agents_builder_kwargs": dict(),
-                                                               "parameters_builder_kwargs": {"gamma": gamma,
-                                                                                             "delta": delta}
-                                                               })
-            experiment_name = "{}gamma_{}delta".format(np.round(gamma, 1), np.round(delta, 1))
-            run_experiment(series_dir=series_dir,
-                           experiment_name=experiment_name,
-                           agent_network=agent_network)
+    for alpha in tqdm(np.linspace(-2, 2, 11)):
+        for beta in np.linspace(-2, 2, 11):
+            for gamma in tqdm(np.linspace(-2, 2, 11)):
+                for delta in np.linspace(-2, 2, 11):
+                    agent_network = LuzieAgentNetwork(builders_kwargs={"adj_matrix_builder_kwargs": dict(),
+                                                                    "agents_builder_kwargs": dict(),
+                                                                    "parameters_builder_kwargs": {"alpha": alpha,
+                                                                                                    "beta": beta,
+                                                                                                    "gamma": gamma,
+                                                                                                    "delta": delta}
+                                                                    })
+                    experiment_name = "{}alpha_{}beta_{}gamma_{}delta".format(np.round(alpha, 1), np.round(beta, 1),
+                                                                              np.round(gamma, 1), np.round(delta, 1))
+                    run_experiment(series_dir=series_dir,
+                                   experiment_name=experiment_name,
+                                   agent_network=agent_network,
+                                   metrics_interval=50)
 
 
 
