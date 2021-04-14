@@ -12,7 +12,6 @@ from social_dynamics import utility
 from social_dynamics.agent_networks.agent_network import AgentNetwork
 from social_dynamics.agent_networks.god_agent_network.god_agent_network import GODAgentNetwork
 from social_dynamics.agent_networks.luzie_agent_network.luzie_agent_network import LuzieAgentNetwork
-from social_dynamics.metrics import metric
 
 
 @gin.configurable
@@ -90,23 +89,24 @@ def run_experiment_series(root_dir: str,
     np.save(os.path.join(series_dir, 'initial_random_state.npy'),
             np.array(random_state, dtype='object'))
     
-    for alpha in tqdm(np.linspace(-2, 2, 11)):
-        for beta in np.linspace(-2, 2, 11):
-            for gamma in tqdm(np.linspace(-2, 2, 11)):
+    for alpha in np.linspace(-2, 2, 11):
+        for beta in tqdm(np.linspace(-2, 2, 11)):
+            for gamma in np.linspace(-2, 2, 11):
                 for delta in np.linspace(-2, 2, 11):
                     agent_network = LuzieAgentNetwork(builders_kwargs={"adj_matrix_builder_kwargs": dict(),
-                                                                    "agents_builder_kwargs": dict(),
-                                                                    "parameters_builder_kwargs": {"alpha": alpha,
-                                                                                                    "beta": beta,
-                                                                                                    "gamma": gamma,
-                                                                                                    "delta": delta}
+                                                                       "agents_builder_kwargs": dict(),
+                                                                       "parameters_builder_kwargs": {"alpha": alpha,
+                                                                                                     "beta": beta,
+                                                                                                     "gamma": gamma,
+                                                                                                     "delta": delta}
                                                                     })
                     experiment_name = "{}alpha_{}beta_{}gamma_{}delta".format(np.round(alpha, 1), np.round(beta, 1),
                                                                               np.round(gamma, 1), np.round(delta, 1))
-                    run_experiment(series_dir=series_dir,
-                                   experiment_name=experiment_name,
-                                   agent_network=agent_network,
-                                   metrics_interval=50)
+                    if not os.path.exists(os.path.join(series_dir, experiment_name)):
+                        run_experiment(series_dir=series_dir,
+                                       experiment_name=experiment_name,
+                                       agent_network=agent_network,
+                                       metrics_interval=50)
 
 
 
