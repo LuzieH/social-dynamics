@@ -5,8 +5,9 @@ from absl import logging
 import gin
 import numpy as np
 import os
+from pathlib import Path
 from tqdm import tqdm
-from typing import List, Optional
+from typing import Optional
 
 from social_dynamics import utility
 from social_dynamics.agent_networks.agent_network import AgentNetwork
@@ -15,7 +16,7 @@ from social_dynamics.agent_networks.luzie_agent_network.luzie_agent_network impo
 
 
 @gin.configurable
-def run_experiment(series_dir: str,
+def run_experiment(series_dir: Path,
                    experiment_name: str,
                    num_time_steps: int,
                    agent_network: AgentNetwork,
@@ -36,9 +37,9 @@ def run_experiment(series_dir: str,
                 know the state of the network at every time step, but at every x time_steps. A longer interval
                 increases speed and reduces memory footprint (at the price of less data collected)
     """
-    experiment_dir = os.path.join(series_dir, experiment_name)
-    if not os.path.isdir(experiment_dir):
-        os.makedirs(experiment_dir)
+    experiment_dir = series_dir.joinpath(experiment_name)
+    if not experiment_dir.is_dir():
+        experiment_dir.mkdir(parents=True)
     
     metrics = utility.setup_metrics(checkpoint_interval=checkpoint_interval,
                                     metrics_interval=metrics_interval)
@@ -55,9 +56,18 @@ def run_experiment(series_dir: str,
             for metric in metrics:
                 metric.save(save_path=experiment_dir, time_step=t)
                 metric.reset()
+    
+    for metric_dir in experiment_dir.iterdir():
+        dir_path = experiment_dir.joinpath(metric_dir)
+        files = sorted(dir_path.iterdir(), key=os.path.getmtime)
+        files = [file for file in files]
+        results = [np.load(file) for file in files]
+        np.save(files[-1], np.concatenate(results, axis=0))
+        for file in files[:-1]:
+            file.unlink()
 
 
-def run_experiment_series(root_dir: str,
+def run_experiment_series(root_dir: Path,
                           series_name: str,
                           random_seed: Optional[int] = None,
                           random_state_path: Optional[str] = None) -> None:
@@ -74,10 +84,10 @@ def run_experiment_series(root_dir: str,
     assert (random_seed is None) or (random_state_path is None), (
         "Should not feed a random seed and a random state at the same time."
         " Only one of the two can be used at once")
-    root_dir = os.path.expanduser(root_dir)
-    series_dir = os.path.join(root_dir, series_name)
-    if not os.path.isdir(series_dir):
-        os.makedirs(series_dir)
+    root_dir = root_dir.expanduser()
+    series_dir = root_dir.joinpath(series_name)
+    if not series_dir.isdir():
+        series_dir.mkdir(parents=True)
 
     # Managing the random state for replicabiity purposes
     if random_state_path is not None:
@@ -86,7 +96,7 @@ def run_experiment_series(root_dir: str,
     else:
         np.random.seed(random_seed)
     random_state = np.random.get_state()
-    np.save(os.path.join(series_dir, 'initial_random_state.npy'),
+    np.save(series_dir.joinpath('initial_random_state.npy'),
             np.array(random_state, dtype='object'))
     
     for alpha in np.linspace(-2, 2, 11):
@@ -102,7 +112,7 @@ def run_experiment_series(root_dir: str,
                                                                     })
                     experiment_name = "{}alpha_{}beta_{}gamma_{}delta".format(np.round(alpha, 1), np.round(beta, 1),
                                                                               np.round(gamma, 1), np.round(delta, 1))
-                    if not os.path.exists(os.path.join(series_dir, experiment_name)):
+                    if not series_dir.joinpath(experiment_name).exists():
                         run_experiment(series_dir=series_dir,
                                        experiment_name=experiment_name,
                                        agent_network=agent_network,
@@ -114,7 +124,7 @@ def main(_) -> None:
     logging.set_verbosity(logging.INFO)
     utility.load_gin_configs(FLAGS.gin_files, FLAGS.gin_bindings)
     
-    run_experiment_series(root_dir=FLAGS.root_dir, series_name=FLAGS.series_name)
+    run_experiment_series(root_dir=Path(FLAGS.root_dir), series_name=FLAGS.series_name)
 
 
 if __name__ == '__main__':
