@@ -86,7 +86,7 @@ def run_experiment_series(root_dir: Path,
         " Only one of the two can be used at once")
     root_dir = root_dir.expanduser()
     series_dir = root_dir.joinpath(series_name)
-    if not series_dir.isdir():
+    if not series_dir.is_dir():
         series_dir.mkdir(parents=True)
 
     # Managing the random state for replicabiity purposes
