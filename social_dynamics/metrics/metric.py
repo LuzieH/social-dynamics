@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Union
 import numpy as np
+from pathlib import Path
 
 
 class Metric(ABC):
@@ -29,7 +30,7 @@ class Metric(ABC):
         """Computes and returns a final value for the metric."""
 
     @abstractmethod
-    def save(self, save_path: str, time_step: int) -> None:
+    def save(self, save_path: Path, time_step: int) -> None:
         """Saves the cumulated results of the metric
 
         Args:

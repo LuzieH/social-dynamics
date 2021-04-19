@@ -5,15 +5,15 @@ from absl import logging
 import gin
 import numpy as np
 import os
+from pathlib import Path
 from tqdm import tqdm
-from typing import List, Optional
+from typing import Optional
 
 from social_dynamics import utility
-from social_dynamics.metrics import metric
 
 
 @gin.configurable
-def run_experiment(root_dir: str,
+def run_experiment(root_dir: Path,
                    experiment_name: str,
                    num_time_steps: int,
                    checkpoint_interval: int,
@@ -42,16 +42,16 @@ def run_experiment(root_dir: str,
     assert (random_seed is None) or (random_state_path is None), (
         "Should not feed a random seed and a random state at the same time."
         " Only one of the two can be used at once")
-    root_dir = os.path.expanduser(root_dir)
-    experiment_dir = os.path.join(root_dir, experiment_name)
+    root_dir = root_dir.expanduser()
+    experiment_dir = root_dir.joinpath(experiment_name)
 
-    if not os.path.isdir(experiment_dir):
-        experiment_run_dir = os.path.join(experiment_dir, '0')
+    if not experiment_dir.is_dir():
+        experiment_run_dir = experiment_dir.joinpath('0')
         os.makedirs(experiment_run_dir)
     else:
-        run_id = str(max([int(folder) for folder in os.listdir(experiment_dir)]) + 1)
-        experiment_run_dir = os.path.join(experiment_dir, run_id)
-        os.makedirs(experiment_run_dir)
+        run_id = str(max([int(folder.name) for folder in experiment_dir.iterdir()]) + 1)
+        experiment_run_dir = experiment_dir.joinpath(run_id)
+        experiment_run_dir.mkdir(parents=True)
 
     # Managing the random state for replicabiity purposes
     if random_state_path is not None:
@@ -60,7 +60,7 @@ def run_experiment(root_dir: str,
     else:
         np.random.seed(random_seed)
     random_state = np.random.get_state()
-    np.save(os.path.join(experiment_run_dir, 'initial_random_state.npy'),
+    np.save(experiment_run_dir.joinpath('initial_random_state.npy'),
             np.array(random_state, dtype='object'))
 
     agent_network = utility.setup_network()
@@ -84,7 +84,7 @@ def run_experiment(root_dir: str,
 def main(_) -> None:
     logging.set_verbosity(logging.INFO)
     utility.load_gin_configs(FLAGS.gin_files, FLAGS.gin_bindings)
-    run_experiment(root_dir=FLAGS.root_dir)
+    run_experiment(root_dir=Path(FLAGS.root_dir))
 
 
 if __name__ == '__main__':

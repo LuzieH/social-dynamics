@@ -2,6 +2,7 @@ from typing import Tuple, Dict
 import gin
 import numpy as np
 import os
+from pathlib import Path
 from scipy.spatial.distance import pdist
 from social_dynamics.agent_networks.agent_network import AgentNetwork
 from social_dynamics.metrics import metric
@@ -27,12 +28,12 @@ class StateMetric(metric.Metric):
     def result(self) -> np.ndarray:
         return np.copy(self._buffer)
     
-    def save(self, save_path: str, time_step: int) -> None:
-        metric_dir = os.path.join(save_path, self.name)
-        if not os.path.exists(metric_dir):
-            os.mkdir(metric_dir)
+    def save(self, save_path: Path, time_step: int) -> None:
+        metric_dir = save_path.joinpath(self.name)
+        if not metric_dir.exists():
+            metric_dir.mkdir()
         
-        np.save(os.path.join(metric_dir, 'results_t{}.npy'.format(time_step)),
+        np.save(metric_dir.joinpath('results_t{}.npy'.format(time_step)),
                 self.result())
 
 
@@ -84,12 +85,12 @@ class PopulationStateMetric(metric.Metric):
                 "DissensusMetric": np.copy(self._dissensus_buffer),
                 "UnopinionatedMetric": np.copy(self._unopinionated_buffer)}
     
-    def save(self, save_path: str, time_step: int) -> None:
+    def save(self, save_path: Path, time_step: int) -> None:
         results = self.result()
         for metric in results:
-            metric_dir = os.path.join(save_path, metric)
-            if not os.path.exists(metric_dir):
-                os.mkdir(metric_dir)
+            metric_dir = save_path.joinpath(metric)
+            if not metric_dir.exists():
+                metric_dir.mkdir()
         
-            np.save(os.path.join(metric_dir, 'results_t{}.npy'.format(time_step)),
+            np.save(metric_dir.joinpath('results_t{}.npy'.format(time_step)),
                     results[metric])
