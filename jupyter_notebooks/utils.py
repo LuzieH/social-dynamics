@@ -1,24 +1,22 @@
 import io
+import os
+from pathlib import Path
+from typing import Dict, Optional
+
 import imageio
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-from pathlib import Path
-from shutil import rmtree
 import ternary
 from tqdm import tqdm
-from typing import Dict, Optional
 
 
-
-def load_metrics(experiment_dir: str) -> Dict[str, np.ndarray]:
+def load_metrics(experiment_dir: Path) -> Dict[str, np.ndarray]:
     metrics_results = dict()
-    for metric in os.listdir(experiment_dir):
-        if metric == 'initial_random_state.npy': continue
-        folder = os.path.join(experiment_dir, metric)
+    for metric in experiment_dir.iterdir():
+        if metric.name == 'initial_random_state.npy': continue
         # Sorting files by modification date. This is done because under lexicographic order
         # results at t = 1000 will come before those at t = 200, leading to incorrect concatenation.
-        files = sorted(Path(folder).iterdir(), key=os.path.getmtime)
+        files = sorted(metric.iterdir(), key=os.path.getmtime)
         results = [np.load(file) for file in files]
         metrics_results[metric] = np.concatenate(results, axis=0)
     
@@ -82,4 +80,44 @@ def plot_agents_option(agents: np.ndarray, save_path: Optional[Path] = None) -> 
         return
     
     plt.show()
+
+
+def generate_gif(save_path: Path, state_metric: np.ndarray) -> None:
+    """Takes as input a state_metric result matrix and produces a GIF with the evolution of the 
+    of the agents' states across time plotted in the cartesian plane.
+
+    Args:
+        save_path (Path): Path to the GIF savefiel
+        state_metric (np.ndarray): State metric to be plotted in the GIF. Must be from an experiment
+                with at most two options
+    """
+    if state_metric.shape[2] != 2:
+        raise ValueError("Cannot generate GIF for experiments with more than two options")
+    
+    x_low, y_low, x_high, y_high = *np.min(state_metric, axis=(0,1)), *np.max(state_metric, axis=(0,1))
+
+    images_bufs = []
+    for i in tqdm(range(5, state_metric.shape[0]- 5)):
+        to_plot = state_metric[i:i+5]
+        
+        plt.figure()
+        for agent in range(state_metric.shape[1]):
+            plt.plot(to_plot[:, agent, 0], to_plot[:, agent, 1])
+        plt.xlim(x_low, x_high)
+        plt.ylim(y_low, y_high)
+        buf = io.BytesIO()
+        plt.savefig(buf, format="png")
+        images_bufs.append(buf)
+        plt.close('all')
+
+    # Build gif
+    with imageio.get_writer(save_path, mode='I') as writer:
+        for buf in tqdm(images_bufs):
+            buf.seek(0)
+            image = imageio.imread(buf)
+            writer.append_data(image)
+            buf.close()
+
+
+
 
