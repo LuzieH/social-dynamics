@@ -90,6 +90,9 @@ def run_experiment_series(root_dir: Path,
         series_dir.mkdir(parents=True)
 
     # Managing the random state for replicabiity purposes
+    #FIXME the random state isn't properly managed when running multiple terminals
+    # on the same experiment series for parallel execution. It is overwritten by the last
+    # terminal to be 
     if random_state_path is not None:
         random_state = tuple(np.load(random_state_path, allow_pickle=True))
         np.random.set_state(random_state)
