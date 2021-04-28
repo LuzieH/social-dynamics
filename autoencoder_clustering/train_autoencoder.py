@@ -6,7 +6,7 @@ from utils import create_dataset, get_autoencoder_model
 
 
 
-
+ROOT_PATH = Path("C:/Users/maler/Google Drive/Lavoro/Zuse Institute/Code/social-dynamics/autoencoder_clustering")
 
 if __name__ == "__main__":
     gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -24,10 +24,11 @@ if __name__ == "__main__":
 
     model = get_autoencoder_model(input_shape, layer_sizes=(2048, 512, 128, 32), sigmoid=False)
     model_hist = model.fit(dataset, epochs=10)
-    model_path = Path("autoencoder_model/model.h5")
+    model_path = ROOT_PATH.joinpath("autoencoder_model", "model.h5")
     model.save(model_path)
-    history_path = Path("model_history")
-    history_path.mkdir()
+    history_path = ROOT_PATH.joinpath("model_history")
+    if not history_path.exists():
+        history_path.mkdir()
     np.save(history_path.joinpath("history.npy"), model_hist.history)
     #autoencoder = Model(model.input, model.get_layer('embedding').output)
 
