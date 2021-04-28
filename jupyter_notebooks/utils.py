@@ -1,9 +1,13 @@
+import io
+import imageio
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 from pathlib import Path
-import matplotlib.pyplot as plt
-from typing import Dict, Optional
+from shutil import rmtree
 import ternary
+from tqdm import tqdm
+from typing import Dict, Optional
 
 
 
@@ -21,7 +25,7 @@ def load_metrics(experiment_dir: str) -> Dict[str, np.ndarray]:
     return metrics_results
 
 
-def plot_agents_simplex(options: np.ndarray, filename: Optional[str] = None) -> None:
+def plot_agents_simplex(options: np.ndarray, save_path: Optional[Path] = None) -> None:
     _, ax = plt.subplots(figsize=(8, 8), dpi=150)
     _, tax = ternary.figure(ax=ax, scale=1.0)
     tax.boundary()
@@ -41,20 +45,22 @@ def plot_agents_simplex(options: np.ndarray, filename: Optional[str] = None) -> 
     plt.axis('off')
     tax.legend()
     
-    if filename is not None:
-        plt.savefig(filename)
+    if save_path is not None:
+        if not save_path.parent.exists():
+            save_path.parent.mkdir(parents=True)
+        plt.savefig(save_path)
         plt.close()
         return
     tax.show()
 
 
-def plot_agents_option(agents: np.ndarray, filename: Optional[str] = None) -> None:
+def plot_agents_option(agents: np.ndarray, save_path: Optional[Path] = None) -> None:
     """
     Plots the values across time for all options on different subplots.
     
     Args:
         agents: A numpy array of values to be plotted. Shape=(n_time_steps, n_agents, n_options)
-        filename: Path to save the figure in instead of plotting it.
+        save_path: Path to save the figure in instead of plotting it.
     """
     n_agents, n_options = agents.shape[1:]
     
@@ -68,8 +74,10 @@ def plot_agents_option(agents: np.ndarray, filename: Optional[str] = None) -> No
 
     plt.tight_layout()
     
-    if filename is not None:
-        plt.savefig(filename)
+    if save_path is not None:
+        if not save_path.parent.exists():
+            save_path.parent.mkdir(parents=True)
+        plt.savefig(save_path)
         plt.close()
         return
     
