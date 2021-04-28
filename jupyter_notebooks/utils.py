@@ -18,7 +18,7 @@ def load_metrics(experiment_dir: Path) -> Dict[str, np.ndarray]:
         # results at t = 1000 will come before those at t = 200, leading to incorrect concatenation.
         files = sorted(metric.iterdir(), key=os.path.getmtime)
         results = [np.load(file) for file in files]
-        metrics_results[metric] = np.concatenate(results, axis=0)
+        metrics_results[metric.name] = np.concatenate(results, axis=0)
     
     return metrics_results
 
