@@ -36,6 +36,7 @@ cnn_autoencoder_params = {
 
 ROOT_PATH = Path("C:/Users/maler/Federico/Lavoro/ZIB/autoencoder_clustering")
 model_type = "cnn"
+downsampling = 4
 
 if __name__ == "__main__":
     gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -45,7 +46,7 @@ if __name__ == "__main__":
     experiment_series_folder = experiments_folder.joinpath(
         "2_opt-h_luzie-alpha_beta_gamma_delta_expl-0.0001t")
 
-    dataset = create_dataset(experiment_series_folder, model_type=model_type)
+    dataset = create_dataset(experiment_series_folder, model_type=model_type, downsampling=downsampling)
 
     for data in dataset:
         input_shape = data[0].shape[1:]
@@ -55,6 +56,10 @@ if __name__ == "__main__":
         model = get_cnn_autoencoder_model(input_shape, **cnn_autoencoder_params, sigmoid=False)
     else:
         model = get_dnn_autoencoder_model(input_shape, **dnn_autoencoder_params, sigmoid=False)
+    
+    print("\n\n\n")
+    model.summary()
+    print("\n\n\n")
     model_hist = model.fit(dataset, epochs=20)
     model_path = ROOT_PATH.joinpath("autoencoder_model", "model.h5")
     model.save(model_path)
