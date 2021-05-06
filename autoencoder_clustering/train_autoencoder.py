@@ -35,7 +35,7 @@ cnn_autoencoder_params = {
 }
 
 ROOT_PATH = Path("C:/Users/maler/Federico/Lavoro/ZIB/autoencoder_clustering")
-model_type = "dnn"
+model_type = "cnn"
 
 if __name__ == "__main__":
     gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -48,7 +48,7 @@ if __name__ == "__main__":
     dataset = create_dataset(experiment_series_folder, model_type=model_type)
 
     for data in dataset:
-        input_shape = data[0].shape[1]
+        input_shape = data[0].shape[1:]
         break
     
     if model_type == "cnn":

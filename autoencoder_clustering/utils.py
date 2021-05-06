@@ -28,7 +28,8 @@ def dnn_load_data(file_path: str, shape: tf.TensorShape) -> tf.Tensor:
 
 
 def cnn_data_preprocessing(exp_data: tf.Tensor) -> tf.Tensor:
-    return exp_data[::2], exp_data[::2]
+    tensor = exp_data[::2]
+    return tf.reshape(tensor, [tf.shape(tensor)[0], -1]), tf.reshape(tensor, [tf.shape(tensor)[0], -1])
 
 
 def cnn_load_data(file_path: str, shape: tf.TensorShape) -> tf.Tensor:
@@ -43,7 +44,7 @@ def create_dataset(series_dir: Path, model_type: str) -> tf.data.Dataset:
         raise ValueError(f"Invalid model_type ({model_type})argument passed to the function.")
     example_file = [exp_dir for exp_dir in series_dir.iterdir()][0].joinpath("StateMetric",
                                                                              "results_t200000.npy")
-    shape = np.load(example_file).shape
+    shape = tf.TensorShape(np.load(example_file).shape)
     load_func = partial(cnn_load_data if model_type == "cnn" else dnn_load_data, shape=shape)
     file_pattern = str(series_dir) + "/*/StateMetric/results_t200000.npy"
     dataset = tf.data.Dataset.list_files(file_pattern=file_pattern, shuffle=True)
@@ -53,7 +54,7 @@ def create_dataset(series_dir: Path, model_type: str) -> tf.data.Dataset:
 
 
 def get_dnn_autoencoder_model(input_shape: int, layer_sizes: Tuple[int], dropout_rate: float, sigmoid=False):
-    model_input = model = Input(shape=(input_shape,))
+    model_input = model = Input(shape=input_shape)
 
     for layer_size in layer_sizes[:-1]:
         model = Dense(layer_size, activation='relu')(model)
@@ -67,9 +68,9 @@ def get_dnn_autoencoder_model(input_shape: int, layer_sizes: Tuple[int], dropout
         model = Dropout(dropout_rate)(model)
 
     if sigmoid:
-        model = Dense(input_shape, activation='sigmoid')(model)
+        model = Dense(input_shape[0], activation='sigmoid')(model)
     else:
-        model = Dense(input_shape, activation='linear')(model)
+        model = Dense(input_shape[0], activation='linear')(model)
     model = Model(inputs=model_input, outputs=model)
     opt_m1 = Adam(lr=0.00001)
     model.compile(optimizer=opt_m1, loss="mean_squared_error", metrics=['mse'])
