@@ -11,6 +11,17 @@ from tensorflow.keras.optimizers import Adam
 from typing import Callable, Dict, List, Tuple
 
 
+def check_cnn_autoencoder_shapes(time_series_length: int, layers_kwargs: List[Dict[str, int]]) -> None:
+    current_len = time_series_length
+    print(f"\n\nCNN layers' lengths:\n{current_len}")
+    for i, layer_kwargs in enumerate(layers_kwargs):
+        current_len = (current_len - layer_kwargs["kernel_size"]) / layer_kwargs["strides"] + 1
+        print(current_len)
+        if current_len % 1:
+            raise RuntimeError("Convolutional layers' kwargs are not usable for a CNN autoencoder. "
+                               f"First problem arises at layer {i} (counting from 0)")
+
+
 def load_numpy_file(file_path: str, downsampling: int) -> np.ndarray:
     data = np.load(file_path.numpy().decode())[::downsampling]
     return data.astype(np.float32)
