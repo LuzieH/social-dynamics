@@ -102,8 +102,8 @@ def run_experiment_series(root_dir: Path,
     np.save(series_dir.joinpath('initial_random_state.npy'),
             np.array(random_state, dtype='object'))
     
-    for alpha in np.linspace(-2, 2, 11):
-        for beta in tqdm(np.linspace(-2, 2, 11)):
+    for alpha in tqdm(np.linspace(-2, 2, 11), desc="Outer loop"):
+        for beta in tqdm(np.linspace(-2, 2, 11), desc="Inner loop"):
             for gamma in np.linspace(-2, 2, 11):
                 for delta in np.linspace(-2, 2, 11):
                     agent_network = LuzieAgentNetwork(builders_kwargs={"adj_matrix_builder_kwargs": dict(),
