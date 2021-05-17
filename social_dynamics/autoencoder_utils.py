@@ -63,14 +63,13 @@ def cnn_data_pipeline(file_path: str, shape: tf.TensorShape, load_func: Callable
 def create_dataset(series_dir: Path, downsampling: int, model_type: str) -> tf.data.Dataset:
     if model_type not in ["cnn", "dnn"]:
         raise ValueError(f"Invalid model_type ({model_type})argument passed to the function.")
-    example_file = [exp_dir for exp_dir in series_dir.iterdir()][0].joinpath("StateMetric",
-                                                                             "results_t200000.npy")
+    example_file = next(series_dir.iterdir()).joinpath("StateMetric", "results_t200000.npy")
     shape = tf.TensorShape(np.load(example_file)[::downsampling].shape)
     data_pipeline_func = partial(cnn_data_pipeline if model_type == "cnn" else dnn_data_pipeline,
                                  shape=shape,
                                  load_func=partial(load_numpy_file, downsampling=downsampling))
     file_pattern = str(series_dir) + "/*/StateMetric/results_t200000.npy"
-    dataset = tf.data.Dataset.list_files(file_pattern=file_pattern, shuffle=True)
+    dataset = tf.data.Dataset.list_files(file_pattern=file_pattern, shuffle=False)
     dataset = dataset.map(data_pipeline_func, num_parallel_calls=tf.data.experimental.AUTOTUNE).cache()
     return dataset
 
