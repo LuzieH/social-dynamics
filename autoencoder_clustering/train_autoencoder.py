@@ -50,6 +50,7 @@ if __name__ == "__main__":
         check_cnn_autoencoder_shapes(1000, cnn_autoencoder_params["layers_kwargs"])
 
     dataset = create_dataset(experiment_series_folder, model_type=model_type, downsampling=downsampling)
+    dataset = dataset.batch(128).prefetch(tf.data.experimental.AUTOTUNE)
 
     for data in dataset:
         input_shape = data[0].shape[1:]

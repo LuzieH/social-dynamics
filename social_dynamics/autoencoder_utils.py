@@ -72,7 +72,6 @@ def create_dataset(series_dir: Path, downsampling: int, model_type: str) -> tf.d
     file_pattern = str(series_dir) + "/*/StateMetric/results_t200000.npy"
     dataset = tf.data.Dataset.list_files(file_pattern=file_pattern, shuffle=True)
     dataset = dataset.map(data_pipeline_func, num_parallel_calls=tf.data.experimental.AUTOTUNE).cache()
-    dataset = dataset.batch(128).prefetch(tf.data.experimental.AUTOTUNE)
     return dataset
 
 
