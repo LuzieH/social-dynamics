@@ -1,10 +1,10 @@
 import numpy as np
 from pathlib import Path
 import tensorflow as tf
-from tensorflow.keras.models import Model
-from utils import check_cnn_autoencoder_shapes, create_dataset, get_dnn_autoencoder_model, get_cnn_autoencoder_model
+from social_dynamics.autoencoder_utils import check_cnn_autoencoder_shapes, create_dataset
+from social_dynamics.autoencoder_utils import get_dnn_autoencoder_model, get_cnn_autoencoder_model
 
-dnn_autoencoder_params = {"layer_sizes": (4096, 1024, 512, 512), "dropout_rate": 0.2}
+dnn_autoencoder_params = {"layer_sizes": (2048, 1024, 512, 512), "dropout_rate": 0.1}
 cnn_autoencoder_params = {
     "layers_kwargs": [{
         "kernel_size": 4,
@@ -31,11 +31,11 @@ cnn_autoencoder_params = {
         "strides": 1,
         "filters": 64
     }],
-    "dropout_rate": 0.2
+    "dropout_rate": 0.1
 }
 
 ROOT_PATH = Path("C:/Users/maler/Federico/Lavoro/ZIB/autoencoder_clustering")
-model_type = "cnn"
+model_type = "dnn"
 downsampling = 4
 
 if __name__ == "__main__":
