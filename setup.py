@@ -9,5 +9,6 @@ setup(
     author='ZIB Numerics',
     url='https://github.com/LuzieH/social-dynamics',
     packages=find_packages(),
-    classifiers=[" Programming Language :: Python :: 3.7"]
+    classifiers=["Programming Language :: Python :: 3.9",
+                 "Programming Language :: Python :: 3.8"]
 )
