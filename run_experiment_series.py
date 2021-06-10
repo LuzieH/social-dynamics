@@ -6,6 +6,7 @@ import gin
 import numpy as np
 import os
 from pathlib import Path
+import time
 from tqdm import tqdm
 from typing import Optional
 
@@ -13,6 +14,44 @@ from social_dynamics import utility
 from social_dynamics.agent_networks.agent_network import AgentNetwork
 from social_dynamics.agent_networks.god_agent_network.god_agent_network import GODAgentNetwork
 from social_dynamics.agent_networks.luzie_agent_network.luzie_agent_network import LuzieAgentNetwork
+
+
+LOCKS_PATH = Path("locks")
+
+def check_lock(results_path: Path) -> bool:
+    """
+    Checks if the run defined by the results_path passed needs to be executed, and if so
+    checks that there isn't a lock already on it.
+
+    Returns:
+        bool: Whether to execute the run or not.
+    """
+    lock_name = results_path.name + ".npy"
+    lock_path = LOCKS_PATH.joinpath(lock_name)
+    if results_path.exists() or lock_path.exists():
+        return False
+
+    return True
+
+
+def acquire_lock(results_path: Path) -> None:
+    """
+    Adds a lock on the current run.
+    """
+    if not LOCKS_PATH.exists():
+        LOCKS_PATH.mkdir()
+    lock_name = results_path.name + ".npy"
+    lock_path = LOCKS_PATH.joinpath(lock_name)
+    np.save(lock_path, None)
+
+
+def release_lock(results_path: Path) -> None:
+    """
+    Releases the lock on the current run.
+    """
+    lock_name = results_path.name + ".npy"
+    lock_path = LOCKS_PATH.joinpath(lock_name)
+    lock_path.unlink()
 
 
 @gin.configurable
@@ -92,7 +131,7 @@ def run_experiment_series(root_dir: Path,
     # Managing the random state for replicabiity purposes
     #FIXME the random state isn't properly managed when running multiple terminals
     # on the same experiment series for parallel execution. It is overwritten by the last
-    # terminal to be 
+    # terminal that is instantiated
     if random_state_path is not None:
         random_state = tuple(np.load(random_state_path, allow_pickle=True))
         np.random.set_state(random_state)
@@ -115,11 +154,19 @@ def run_experiment_series(root_dir: Path,
                                                                     })
                     experiment_name = "{}alpha_{}beta_{}gamma_{}delta".format(np.round(alpha, 1), np.round(beta, 1),
                                                                               np.round(gamma, 1), np.round(delta, 1))
-                    if not series_dir.joinpath(experiment_name).exists():
-                        run_experiment(series_dir=series_dir,
-                                       experiment_name=experiment_name,
-                                       agent_network=agent_network,
-                                       metrics_interval=50)
+                    
+                    results_path = series_dir.joinpath(experiment_name)
+                    
+                    if not check_lock(results_path): continue
+                    
+                    acquire_lock(results_path)
+                    
+                    run_experiment(series_dir=series_dir,
+                                   experiment_name=experiment_name,
+                                   agent_network=agent_network,
+                                   metrics_interval=50)
+                    
+                    release_lock(results_path)
 
 
 
