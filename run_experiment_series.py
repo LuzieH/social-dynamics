@@ -26,6 +26,7 @@ def check_lock(results_path: Path) -> bool:
     Returns:
         bool: Whether to execute the run or not.
     """
+    time.sleep(np.random.uniform(high=10))      # Decreases the likelihood of colliding processes on same lock
     lock_name = results_path.name + ".npy"
     lock_path = LOCKS_PATH.joinpath(lock_name)
     if results_path.exists() or lock_path.exists():
