@@ -3,6 +3,7 @@ from absl import flags
 from absl import logging
 
 import gin
+from itertools import product
 import numpy as np
 import os
 from pathlib import Path
@@ -142,32 +143,33 @@ def run_experiment_series(root_dir: Path,
     np.save(series_dir.joinpath('initial_random_state.npy'),
             np.array(random_state, dtype='object'))
     
-    for alpha in tqdm(np.linspace(-2, 2, 11), desc="Outer loop"):
-        for beta in tqdm(np.linspace(-2, 2, 11), desc="Inner loop"):
-            for gamma in np.linspace(-2, 2, 11):
-                for delta in np.linspace(-2, 2, 11):
-                    agent_network = LuzieAgentNetwork(builders_kwargs={"adj_matrix_builder_kwargs": dict(),
-                                                                       "agents_builder_kwargs": dict(),
-                                                                       "parameters_builder_kwargs": {"alpha": alpha,
-                                                                                                     "beta": beta,
-                                                                                                     "gamma": gamma,
-                                                                                                     "delta": delta}
-                                                                    })
-                    experiment_name = "{}alpha_{}beta_{}gamma_{}delta".format(np.round(alpha, 1), np.round(beta, 1),
-                                                                              np.round(gamma, 1), np.round(delta, 1))
-                    
-                    results_path = series_dir.joinpath(experiment_name)
-                    
-                    if not check_lock(results_path): continue
-                    
-                    acquire_lock(results_path)
-                    
-                    run_experiment(series_dir=series_dir,
-                                   experiment_name=experiment_name,
-                                   agent_network=agent_network,
-                                   metrics_interval=50)
-                    
-                    release_lock(results_path)
+    # The list gets shuffled to decrease the likelihood that multiple processes spawned at the same time
+    # might collide on the same locks.
+    experiment_params_list = np.random.shuffle(list(product(np.linspace(-2, 2, 11), repeat=4)))
+    
+    for alpha, beta, gamma, delta in tqdm(experiment_params_list):
+        agent_network = LuzieAgentNetwork(builders_kwargs={"adj_matrix_builder_kwargs": dict(),
+                                                            "agents_builder_kwargs": dict(),
+                                                            "parameters_builder_kwargs": {"alpha": alpha,
+                                                                                            "beta": beta,
+                                                                                            "gamma": gamma,
+                                                                                            "delta": delta}
+                                                        })
+        experiment_name = "{}alpha_{}beta_{}gamma_{}delta".format(np.round(alpha, 1), np.round(beta, 1),
+                                                                    np.round(gamma, 1), np.round(delta, 1))
+        
+        results_path = series_dir.joinpath(experiment_name)
+        
+        if not check_lock(results_path): continue
+        
+        acquire_lock(results_path)
+        
+        run_experiment(series_dir=series_dir,
+                        experiment_name=experiment_name,
+                        agent_network=agent_network,
+                        metrics_interval=50)
+        
+        release_lock(results_path)
 
 
 
