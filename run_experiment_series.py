@@ -9,7 +9,7 @@ import os
 from pathlib import Path
 import time
 from tqdm import tqdm
-from typing import Optional
+from typing import Optional, Union
 
 from social_dynamics import utility
 from social_dynamics.agent_networks.agent_network import AgentNetwork
@@ -18,6 +18,48 @@ from social_dynamics.agent_networks.luzie_agent_network.luzie_agent_network impo
 
 
 LOCKS_PATH = Path("locks")
+
+
+def generate_experiment_params_batch(series_dir: Path) -> Union[None, np.ndarray]:
+    """Returns a batch of yet to-be-done experiments.
+    
+    Note that this does not avoid multiple processes trying to work on the same experiment at the same time.
+    It also does not avoid the fact that a process might meet an already done experiment.
+    
+    E.g. process A gets experiment x as 3rd element in its uncompleted batch and process B gets experiment x
+    as 17th elements in its uncompleted batch. Process B will have to  check that indeed the experiment has
+    already been done by the time it reached it (most likely).
+
+    Args:
+        series_dir (Path): Directory where the results of all the experiments in the series are to be stored.
+
+    Returns:
+        Union[None, np.ndarray]: None if there are no experiments left to run, list of experiment params
+                    otherwise
+    """
+    batch_size = 20
+    experiment_params_array = np.array(list(product(np.linspace(-2, 2, 11), repeat=4)))
+    experiment_path_list = [series_dir.joinpath(generate_experiment_name(alpha=alpha, beta=beta,
+                                                                         gamma=gamma, delta=delta)
+                                                )
+                            for alpha, beta, gamma, delta in tqdm(experiment_params_array)]
+    
+    completed_experiments = np.array(list(series_dir.iterdir()))
+    
+    to_do_experiments = experiment_params_array[~np.isin(experiment_path_list, completed_experiments)].tolist()
+    
+    # The list gets shuffled to decrease the likelihood that multiple processes spawned at the same time
+    # might collide on the same locks.
+    rng = np.random.default_rng()
+    rng.shuffle(to_do_experiments)
+    
+    return to_do_experiments[:batch_size]
+
+
+def generate_experiment_name(alpha:float, beta: float, gamma: float, delta:float) -> str:
+    return "{}alpha_{}beta_{}gamma_{}delta".format(np.round(alpha, 1), np.round(beta, 1),
+                                                   np.round(gamma, 1), np.round(delta, 1))
+
 
 def check_lock(results_path: Path) -> bool:
     """
@@ -142,34 +184,36 @@ def run_experiment_series(root_dir: Path,
     np.save(series_dir.joinpath('initial_random_state.npy'),
             np.array(random_state, dtype='object'))
     
-    # The list gets shuffled to decrease the likelihood that multiple processes spawned at the same time
-    # might collide on the same locks.
-    experiment_params_list = list(product(np.linspace(-2, 2, 11), repeat=4))
-    np.random.shuffle(experiment_params_list)
-    
-    for alpha, beta, gamma, delta in tqdm(experiment_params_list):
-        agent_network = LuzieAgentNetwork(builders_kwargs={"adj_matrix_builder_kwargs": dict(),
-                                                            "agents_builder_kwargs": dict(),
-                                                            "parameters_builder_kwargs": {"alpha": alpha,
-                                                                                            "beta": beta,
-                                                                                            "gamma": gamma,
-                                                                                            "delta": delta}
-                                                        })
-        experiment_name = "{}alpha_{}beta_{}gamma_{}delta".format(np.round(alpha, 1), np.round(beta, 1),
-                                                                    np.round(gamma, 1), np.round(delta, 1))
+    # The reason for sampling batches multiple times instead of just iterating through everything is that
+    # this way we regularly clearup any experiments already done. This saves on a lot of I/O operations
+    # to the disk, particularly towards the end when there can be thousands of folders already done.
+    experiment_params_batch = generate_experiment_params_batch(series_dir=series_dir)
+    while experiment_params_batch:
+        for alpha, beta, gamma, delta in tqdm(experiment_params_batch):
+            agent_network = LuzieAgentNetwork(builders_kwargs={"adj_matrix_builder_kwargs": dict(),
+                                                               "agents_builder_kwargs": dict(),
+                                                               "parameters_builder_kwargs": {"alpha": alpha,
+                                                                                             "beta": beta,
+                                                                                             "gamma": gamma,
+                                                                                             "delta": delta}
+                                                               })
+            experiment_name = generate_experiment_name(alpha=alpha, beta=beta,
+                                                       gamma=gamma, delta=delta)
+            
+            results_path = series_dir.joinpath(experiment_name)
+            
+            if not check_lock(results_path): continue
+            
+            acquire_lock(results_path)
+            
+            run_experiment(series_dir=series_dir,
+                           experiment_name=experiment_name,
+                           agent_network=agent_network,
+                           metrics_interval=50)
+            
+            release_lock(results_path)
         
-        results_path = series_dir.joinpath(experiment_name)
-        
-        if not check_lock(results_path): continue
-        
-        acquire_lock(results_path)
-        
-        run_experiment(series_dir=series_dir,
-                        experiment_name=experiment_name,
-                        agent_network=agent_network,
-                        metrics_interval=50)
-        
-        release_lock(results_path)
+        experiment_params_batch = generate_experiment_params_batch()
 
 
 
