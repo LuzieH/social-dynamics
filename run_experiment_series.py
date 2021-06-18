@@ -145,7 +145,8 @@ def run_experiment_series(root_dir: Path,
     
     # The list gets shuffled to decrease the likelihood that multiple processes spawned at the same time
     # might collide on the same locks.
-    experiment_params_list = np.random.shuffle(list(product(np.linspace(-2, 2, 11), repeat=4)))
+    experiment_params_list = list(product(np.linspace(-2, 2, 11), repeat=4))
+    np.random.shuffle(experiment_params_list)
     
     for alpha, beta, gamma, delta in tqdm(experiment_params_list):
         agent_network = LuzieAgentNetwork(builders_kwargs={"adj_matrix_builder_kwargs": dict(),
