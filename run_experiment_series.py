@@ -42,7 +42,7 @@ def generate_experiment_params_batch(series_dir: Path) -> Union[None, np.ndarray
     experiment_path_list = [series_dir.joinpath(generate_experiment_name(alpha=alpha, beta=beta,
                                                                          gamma=gamma, delta=delta)
                                                 )
-                            for alpha, beta, gamma, delta in tqdm(experiment_params_array)]
+                            for alpha, beta, gamma, delta in experiment_params_array]
     
     completed_experiments = np.array(list(series_dir.iterdir()))
     
