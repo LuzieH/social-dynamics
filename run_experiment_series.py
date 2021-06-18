@@ -214,7 +214,7 @@ def run_experiment_series(root_dir: Path,
 
             release_lock(results_path)
 
-        experiment_params_batch = generate_experiment_params_batch(series_dir=series_dir)
+        experiment_params_batch = generate_experiment_params_batch(series_dir=series_dir, batch_size=batch_size)
 
 
 def main(_) -> None:
