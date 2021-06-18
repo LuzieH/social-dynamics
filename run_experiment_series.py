@@ -213,7 +213,7 @@ def run_experiment_series(root_dir: Path,
             
             release_lock(results_path)
         
-        experiment_params_batch = generate_experiment_params_batch()
+        experiment_params_batch = generate_experiment_params_batch(series_dir=series_dir)
 
 
 
