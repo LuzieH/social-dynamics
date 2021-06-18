@@ -99,8 +99,7 @@ def run_experiment(series_dir: Path,
                 metric.reset()
     
     for metric_dir in experiment_dir.iterdir():
-        dir_path = experiment_dir.joinpath(metric_dir)
-        files = sorted(dir_path.iterdir(), key=os.path.getmtime)
+        files = sorted(metric_dir.iterdir(), key=os.path.getmtime)
         files = [file for file in files]
         results = [np.load(file) for file in files]
         np.save(files[-1], np.concatenate(results, axis=0))
