@@ -6,7 +6,6 @@ from itertools import product
 import numpy as np
 from pathlib import Path
 import pickle
-import random
 
 from social_dynamics.autoencoder_utils import create_dataset
 from social_dynamics.autoencoder_utils import compute_embedding_length
@@ -31,32 +30,33 @@ def generate_model_kwargs_lists() -> List[Tuple[str, int, ModelParams]]:
     # This is more complex than for the DNNs because the space of hyperparameters is much much larger
     # and not all possible choices are allowed. What is allowed is determined via compute_embedding_length()
     cnn_kwargs_list = []
-    random.seed(42)
-    np.random.seed(42)
+    rng = np.random.default_rng(42)
     for n_layers in range(6, 10):
         for stridess in tqdm(list(product((1, 2), repeat=n_layers))):
-            #for kernel_sizes in product(range(3, 10), repeat=n_layers):
-            for kernel_sizes in np.random.choice(np.arange(3, 10), (int(4096*1.75**(n_layers-6)), n_layers)):
+            # This n_samples value has been empirically determined to make ti so that we get ~200 models
+            # for every n_layer. This makes the total number of CNNs comparable to the DNNs.
+            n_samples = int(512/2.2**(n_layers-6))
+            for kernel_sizes in rng.choice(np.arange(3, 10), (n_samples, n_layers)):
                 layers_kwargs = [{"kernel_size": kernel_size,
-                                "strides": strides}
-                                for kernel_size in kernel_sizes
-                                for strides in stridess]
+                                  "strides": strides}
+                                 for kernel_size, strides in zip(kernel_sizes, stridess)]
                 
                 embedding_len = compute_embedding_length(1000, layers_kwargs)
                 if embedding_len == -1: continue
                 
-                final_filters = np.random.choice((8, 16, 32))
+                final_filters = rng.choice((8, 16, 32))
                 
                 embedding_size = embedding_len * final_filters
                 # DNN models can't have an embedding size larger than 512, so should also CNNs
                 if embedding_size > 512: continue
                 
                 
-                starting_filters = np.random.choice((256, 128))
+                starting_filters = rng.choice((256, 128))
                 
-                filters_reductions = random.choice(list(product((1, 2), repeat=n_layers-2)))
+                possible_filters_reductions = list(product((1, 2), repeat=n_layers-2))
+                filters_reductions = possible_filters_reductions[rng.choice(len(possible_filters_reductions))]
                 while (starting_filters / np.product(filters_reductions)) < final_filters:
-                    filters_reductions = random.choice(list(product((1, 2), repeat=n_layers-2)))
+                    filters_reductions = possible_filters_reductions[rng.choice(len(possible_filters_reductions))]
                 
                 filters = ([starting_filters] +
                             [starting_filters/np.prod(filters_reductions[:i+1]) for i in range(len(filters_reductions))] +
@@ -64,7 +64,7 @@ def generate_model_kwargs_lists() -> List[Tuple[str, int, ModelParams]]:
                 for i, layer_kwargs in enumerate(layers_kwargs):
                     layer_kwargs["filters"] = filters[i]
                 
-                dropout_rate = np.random.choice((0.05, 0.1))
+                dropout_rate = rng.choice((0.05, 0.1))
                 
                 model_kwargs = {"layers_kwargs": layers_kwargs,
                                 "dropout_rate": dropout_rate}
