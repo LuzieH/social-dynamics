@@ -11,6 +11,9 @@ from tensorflow.keras.optimizers import Adam
 from typing import Dict, List, Tuple
 
 
+MODEL_TYPES = ["cnn", "dnn"]
+INPUT_TYPES = ["complete", "cut"]
+
 def compute_embedding_length(time_series_length: int, layers_kwargs: List[Dict[str, int]]) -> int:
     current_len = time_series_length
     for layer_kwargs in layers_kwargs:
@@ -21,9 +24,9 @@ def compute_embedding_length(time_series_length: int, layers_kwargs: List[Dict[s
     return current_len
 
 
-def load_numpy_file(file_path: str, downsampling: int, last_portion: bool) -> np.ndarray:
+def load_numpy_file(file_path: str, downsampling: int, cut: bool) -> np.ndarray:
     data = np.load(file_path.numpy().decode())[::downsampling]
-    if last_portion:
+    if cut:
         data = data[int(data.shape[0]*0.75):]
     return data.astype(np.float32)
 
@@ -38,16 +41,16 @@ def cnn_data_preprocessing(exp_data: tf.Tensor) -> tf.Tensor:
     return tensor, tensor
 
 
-def create_dataset(series_dir: Path, downsampling: int, model_type: str, last_portion: bool) -> tf.data.Dataset:
+def create_dataset(series_dir: Path, downsampling: int, model_type: str, cut: bool) -> tf.data.Dataset:
     """Creates a tensorflow.data.Dataset object to be used for training of the autoencoder.
 
     Args:
         series_dir (Path): Directory where the results for all experiments in the series can be found.
                     These will be used as samples to train the autoencoder.
         downsampling (int): Downsampling factor applied to the results.
-        model_type (str): String in ["cnn", "dnn"]. This is necessary since the two kinds of models require
+        model_type (str): String in MODEL_TYPES. This is necessary since the two kinds of models require
                     different input shapes.
-        last_portion (bool): Boolean for whether to feed the last 25% of an experiment as input instead of
+        cut (bool): Boolean for whether to feed the last 25% of an experiment as input instead of
                     the entire run.
 
     Raises:
@@ -56,10 +59,10 @@ def create_dataset(series_dir: Path, downsampling: int, model_type: str, last_po
     Returns:
         tf.data.Dataset: Dataset to be used for training the autoencoder.
     """
-    if model_type not in ["cnn", "dnn"]:
+    if model_type not in MODEL_TYPES:
         raise ValueError(f"Invalid model_type ({model_type})argument passed to the function.")
     example_file = next(series_dir.iterdir()).joinpath("StateMetric", "results_t200000.npy")
-    load_func = partial(load_numpy_file, downsampling=downsampling, last_portion=last_portion)
+    load_func = partial(load_numpy_file, downsampling=downsampling, cut=cut)
     shape = tf.TensorShape(load_func(example_file).shape)
     
     preprocessing_func = dnn_data_preprocessing if model_type == "dnn" else cnn_data_preprocessing
@@ -73,6 +76,42 @@ def create_dataset(series_dir: Path, downsampling: int, model_type: str, last_po
     dataset = tf.data.Dataset.list_files(file_pattern=file_pattern, shuffle=False)
     dataset = dataset.map(data_pipeline, num_parallel_calls=tf.data.experimental.AUTOTUNE).cache()
     return dataset
+
+
+def load_all_datasets(series_dir: Path, downsampling: int) -> Dict[str, tf.data.Dataset]:
+    """Calls the create_dataset function for all model_types and input_types to be used.
+    Stores the resulting datasets in a dictionary which is returned.
+
+    Args:
+        series_dir (Path): Directory where the results for all the experiments in the series can be found.
+                    These will be used as samples to train the autoencoder.
+        downsampling (int): Downsampling factor applied to the results.
+
+    Returns:
+        Dict[str, tf.data.Dataset]: Dictionary storing all the datasets loaded with their unique keys. 
+    """
+    
+    datasets = dict()
+    for model_type in MODEL_TYPES:
+        for input_type in INPUT_TYPES:
+            key = "-".join((model_type, input_type))
+            
+            dataset = create_dataset(series_dir=series_dir, downsampling=downsampling, model_type=model_type, cut=(input_type == "cut"))
+            dataset = dataset.shuffle(buffer_size=20_000).batch(128).prefetch(tf.data.experimental.AUTOTUNE)
+            datasets[key] = dataset
+    
+    return datasets
+
+
+def determine_input_shapes(datasets: Dict[str, tf.data.Dataset]):
+    input_shapes = dict()
+    for dataset in datasets:
+        for data in datasets[dataset]:
+            input_shapes[dataset] = data[0].shape[1:]
+            break
+    
+    return input_shapes
+
 
 
 def get_dnn_autoencoder_model(input_shape: int, layer_sizes: Tuple[int], dropout_rate: float, sigmoid=False) -> Model:
