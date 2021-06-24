@@ -103,7 +103,7 @@ def load_all_datasets(series_dir: Path, downsampling: int) -> Dict[str, tf.data.
     return datasets
 
 
-def determine_input_shapes(datasets: Dict[str, tf.data.Dataset]):
+def determine_input_shapes(datasets: Dict[str, tf.data.Dataset]) -> Dict[str, Tuple[int]]:
     input_shapes = dict()
     for dataset in datasets:
         for data in datasets[dataset]:
