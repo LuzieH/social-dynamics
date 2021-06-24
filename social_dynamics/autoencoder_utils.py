@@ -24,23 +24,6 @@ def compute_embedding_length(time_series_length: int, layers_kwargs: List[Dict[s
     return current_len
 
 
-def load_numpy_file(file_path: str, downsampling: int, cut: bool) -> np.ndarray:
-    data = np.load(file_path.numpy().decode())[::downsampling]
-    if cut:
-        data = data[int(data.shape[0]*0.75):]
-    return data.astype(np.float32)
-
-
-def dnn_data_preprocessing(exp_data: tf.Tensor) -> tf.Tensor:
-    tensor = tf.reshape(exp_data, [-1])
-    return tensor, tensor
-
-
-def cnn_data_preprocessing(exp_data: tf.Tensor) -> tf.Tensor:
-    tensor = tf.reshape(exp_data, [tf.shape(exp_data)[0], -1])
-    return tensor, tensor
-
-
 def create_dataset(series_dir: Path, downsampling: int, model_type: str, cut: bool) -> tf.data.Dataset:
     """Creates a tensorflow.data.Dataset object to be used for training of the autoencoder.
 
@@ -61,13 +44,27 @@ def create_dataset(series_dir: Path, downsampling: int, model_type: str, cut: bo
     """
     if model_type not in MODEL_TYPES:
         raise ValueError(f"Invalid model_type ({model_type})argument passed to the function.")
+    
+    def load_numpy_file(file_path: str) -> np.ndarray:
+        data = np.load(file_path.numpy().decode())[::downsampling]
+        if cut:
+            data = data[int(data.shape[0]*0.75):]
+        return data.astype(np.float32)
+
     example_file = next(series_dir.iterdir()).joinpath("StateMetric", "results_t200000.npy")
-    load_func = partial(load_numpy_file, downsampling=downsampling, cut=cut)
-    shape = tf.TensorShape(load_func(example_file).shape)
+    shape = tf.TensorShape(load_numpy_file(example_file).shape)
+    
+    def dnn_data_preprocessing(exp_data: tf.Tensor) -> tf.Tensor:
+        tensor = tf.reshape(exp_data, [-1])
+        return tensor, tensor
+
+    def cnn_data_preprocessing(exp_data: tf.Tensor) -> tf.Tensor:
+        tensor = tf.reshape(exp_data, [tf.shape(exp_data)[0], -1])
+        return tensor, tensor
     
     preprocessing_func = dnn_data_preprocessing if model_type == "dnn" else cnn_data_preprocessing
     def data_pipeline(file_path: str) -> tf.Tensor:
-        [exp_data,] = tf.py_function(load_func, [file_path], [tf.float32,])
+        [exp_data,] = tf.py_function(load_numpy_file, [file_path], [tf.float32,])
         exp_data.set_shape(shape)
         inputs, outputs = preprocessing_func(exp_data)
         return inputs, outputs
@@ -111,7 +108,6 @@ def determine_input_shapes(datasets: Dict[str, tf.data.Dataset]) -> Dict[str, Tu
             break
     
     return input_shapes
-
 
 
 def get_dnn_autoencoder_model(input_shape: int, layer_sizes: Tuple[int], dropout_rate: float, sigmoid=False) -> Model:
