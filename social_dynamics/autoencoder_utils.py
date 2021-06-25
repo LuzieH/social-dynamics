@@ -46,7 +46,7 @@ def create_dataset(series_dir: Path, downsampling: int, model_type: str, cut: bo
         raise ValueError(f"Invalid model_type ({model_type})argument passed to the function.")
     
     def load_numpy_file(file_path: str) -> np.ndarray:
-        data = np.load(file_path.numpy().decode())[::downsampling]
+        data = np.load(file_path)[::downsampling]
         if cut:
             data = data[int(data.shape[0]*0.75):]
         return data.astype(np.float32)
