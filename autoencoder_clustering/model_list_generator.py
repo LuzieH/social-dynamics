@@ -28,7 +28,7 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
     """
     rng = np.random.default_rng(42)
     models_kwargs = dict()
-    
+
     # CNN-type autoencoders.
     def generate_cnn_kwargs_list(time_series_length: int) -> List[ModelKwargs]:
         """Generates a list of model kwargs for CNN-type autoencoders. These models are valid for time-series
@@ -49,68 +49,77 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
             for stridess in tqdm(list(product((1, 2), repeat=n_layers))):
                 # This n_samples value has been empirically determined to make ti so that we get ~200 models
                 # for every n_layer. This makes the total number of CNNs comparable to the DNNs.
-                n_samples = int(512/2.2**(n_layers-6))
+                n_samples = int(512 / 2.2**(n_layers - 6))
                 for kernel_sizes in rng.choice(np.arange(3, 10), (n_samples, n_layers)):
-                    layers_kwargs = [{"kernel_size": kernel_size,
-                                    "strides": strides}
-                                    for kernel_size, strides in zip(kernel_sizes, stridess)]
-                    
-                    embedding_len = compute_embedding_length(time_series_length=time_series_length, layers_kwargs=layers_kwargs)
-                    if embedding_len == -1: continue
-                    
+                    layers_kwargs = [{
+                        "kernel_size": kernel_size,
+                        "strides": strides
+                    } for kernel_size, strides in zip(kernel_sizes, stridess)]
+
+                    embedding_len = compute_embedding_length(time_series_length=time_series_length,
+                                                             layers_kwargs=layers_kwargs)
+                    if embedding_len == -1:
+                        continue
+
                     final_filters = rng.choice((8, 16, 32))
-                    
+
                     embedding_size = embedding_len * final_filters
                     # DNN models can't have an embedding size larger than 512, so should also CNNs
-                    if embedding_size > 512: continue
-                    
-                    
+                    if embedding_size > 512:
+                        continue
+
                     starting_filters = rng.choice((256, 128))
-                    
-                    possible_filters_reductions = list(product((1, 2), repeat=n_layers-2))
-                    filters_reductions = possible_filters_reductions[rng.choice(len(possible_filters_reductions))]
+
+                    possible_filters_reductions = list(product((1, 2), repeat=n_layers - 2))
+                    filters_reductions = possible_filters_reductions[rng.choice(
+                        len(possible_filters_reductions))]
                     while (starting_filters / np.product(filters_reductions)) < final_filters:
-                        filters_reductions = possible_filters_reductions[rng.choice(len(possible_filters_reductions))]
-                    
-                    filters = ([starting_filters] +
-                                [starting_filters/np.prod(filters_reductions[:i+1]) for i in range(len(filters_reductions))] +
-                                [final_filters])
+                        filters_reductions = possible_filters_reductions[rng.choice(
+                            len(possible_filters_reductions))]
+
+                    filters = ([starting_filters] + [
+                        starting_filters / np.prod(filters_reductions[:i + 1])
+                        for i in range(len(filters_reductions))
+                    ] + [final_filters])
                     for i, layer_kwargs in enumerate(layers_kwargs):
                         layer_kwargs["filters"] = filters[i]
-                    
+
                     dropout_rate = rng.choice((0.05, 0.1))
-                    
-                    model_kwargs = {"layers_kwargs": layers_kwargs,
-                                    "dropout_rate": dropout_rate}
+
+                    model_kwargs = {"layers_kwargs": layers_kwargs, "dropout_rate": dropout_rate}
                     cnn_kwargs_list.append(model_kwargs)
-        
+
         return cnn_kwargs_list
-    
+
     models_kwargs["cnn-complete"] = generate_cnn_kwargs_list(1000)
     models_kwargs["cnn-cut"] = generate_cnn_kwargs_list(250)
-    
+
     # DNN-type autoencoders.
     FIRST_LAYER_SIZES = (4096, 2048, 1024)
     EMBEDDING_SIZES = (512, 256, 128)
-    dnn_kwargs = [{"layer_sizes":
-        tuple([first_layer_size] +
-            [first_layer_size // np.prod(layers_reductions[:layer_id])
-            for layer_id in range(1, n_layers + 1)] + [embedding_size]),
-        "dropout_rate": dropout_rate}
-        for first_layer_size in FIRST_LAYER_SIZES
-        for embedding_size in EMBEDDING_SIZES
-        for n_layers in range(2, 6)
-        for layers_reductions in product((1, 2), repeat=n_layers)
-        for dropout_rate in (0.05, 0.1)
-        if first_layer_size / np.prod(layers_reductions[:n_layers]) >= embedding_size
-    ]
+    dnn_kwargs = [{
+        "layer_sizes":
+            tuple([first_layer_size] + [
+                first_layer_size // np.prod(layers_reductions[:layer_id])
+                for layer_id in range(1, n_layers + 1)
+            ] + [embedding_size]),
+        "dropout_rate":
+            dropout_rate
+    }
+                  for first_layer_size in FIRST_LAYER_SIZES
+                  for embedding_size in EMBEDDING_SIZES
+                  for n_layers in range(2, 6)
+                  for layers_reductions in product((1, 2), repeat=n_layers)
+                  for dropout_rate in (0.05, 0.1)
+                  if (first_layer_size / np.prod(layers_reductions[:n_layers])) >= embedding_size]
 
     models_kwargs["dnn-complete"] = models_kwargs["dnn-cut"] = dnn_kwargs
-    
+
     return models_kwargs
 
 
-def compute_n_params_distributions(models_kwargs: Dict[str, List[ModelKwargs]], input_shapes: Dict[str, Tuple[int]]) -> Dict[str, np.ndarray]:
+def compute_n_params_distributions(models_kwargs: Dict[str, List[ModelKwargs]],
+                                   input_shapes: Dict[str, Tuple[int]]) -> Dict[str, np.ndarray]:
     """Iterates through all possible models of all possible types to determine how many parameters
     each one has. This is of interest to compare the distribution of model complexity between
     the CNNs and the DNNs.
@@ -136,33 +145,33 @@ def compute_n_params_distributions(models_kwargs: Dict[str, List[ModelKwargs]], 
                 model = get_cnn_autoencoder_model(input_shape, **model_kwargs, sigmoid=False)
             else:
                 model = get_dnn_autoencoder_model(input_shape, **model_kwargs, sigmoid=False)
-            
+
             model_n_params = np.sum([np.prod(v.get_shape().as_list()) for v in model.trainable_variables()])
-            
+
             key_n_params.append(model_n_params)
-            
+
             tf.keras.backend.clear_session()
-        
+
         n_params[key] = np.array(key_n_params)
-    
+
     return n_params
 
 
 def main(_) -> None:
     logging.set_verbosity(logging.INFO)
-    
+
     root_path = Path(FLAGS.root_dir)
-    
+
     models_kwargs = generate_models_kwargs()
-    
-    input_shapes = determine_input_shapes(load_all_datasets(series_dir=root_path.joinpath(FLAGS.series_dir), downsampling=downsampling))
-    
+
+    input_shapes = determine_input_shapes(
+        load_all_datasets(series_dir=root_path.joinpath(FLAGS.series_dir), downsampling=downsampling))
+
     models_n_params = compute_n_params_distributions(models_kwargs=models_kwargs, input_shapes=input_shapes)
-    
+
     # Saving the distributions of model complexities that have been computed for analysis
     for key in models_n_params:
         np.save(root_path.joinpath(key + ".npy"), models_n_params[key])
-
 
     # Saving the dict of model params. This will be iterated upon when exploring the possible
     # autoencoder choices
@@ -171,14 +180,10 @@ def main(_) -> None:
 
 
 if __name__ == '__main__':
-    flags.DEFINE_string('root_dir', None,
-                        'Root directory for writing results of the metrics.')
-    flags.DEFINE_string('series_dir', None,
-                        'Name to identify the experiment series')
+    flags.DEFINE_string('root_dir', None, 'Root directory for writing results of the metrics.')
+    flags.DEFINE_string('series_dir', None, 'Name to identify the experiment series')
     FLAGS = flags.FLAGS
     flags.mark_flag_as_required('root_dir')
     flags.mark_flag_as_required('series_dir')
 
     app.run(main)
-
-

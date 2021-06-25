@@ -10,9 +10,9 @@ from tensorflow.keras.optimizers import Adam
 
 from typing import Dict, List, Tuple
 
-
 MODEL_TYPES = ["cnn", "dnn"]
 INPUT_TYPES = ["complete", "cut"]
+
 
 def compute_embedding_length(time_series_length: int, layers_kwargs: List[Dict[str, int]]) -> int:
     current_len = time_series_length
@@ -20,7 +20,7 @@ def compute_embedding_length(time_series_length: int, layers_kwargs: List[Dict[s
         current_len = (current_len - layer_kwargs["kernel_size"]) / layer_kwargs["strides"] + 1
         if current_len % 1:
             return -1
-    
+
     return current_len
 
 
@@ -44,16 +44,16 @@ def create_dataset(series_dir: Path, downsampling: int, model_type: str, cut: bo
     """
     if model_type not in MODEL_TYPES:
         raise ValueError(f"Invalid model_type ({model_type})argument passed to the function.")
-    
-    def load_numpy_file(file_path: str) -> np.ndarray:
-        data = np.load(file_path)[::downsampling]
+
+    def load_numpy_file(file_path: tf.Tensor) -> np.ndarray:
+        data = np.load(file_path.numpy().decode())[::downsampling]
         if cut:
-            data = data[int(data.shape[0]*0.75):]
+            data = data[int(data.shape[0] * 0.75):]
         return data.astype(np.float32)
 
     example_file = next(series_dir.iterdir()).joinpath("StateMetric", "results_t200000.npy")
-    shape = tf.TensorShape(load_numpy_file(example_file).shape)
-    
+    shape = tf.TensorShape(load_numpy_file(tf.convert_to_tensor(str(example_file.absolute()))).shape)
+
     def dnn_data_preprocessing(exp_data: tf.Tensor) -> tf.Tensor:
         tensor = tf.reshape(exp_data, [-1])
         return tensor, tensor
@@ -61,14 +61,15 @@ def create_dataset(series_dir: Path, downsampling: int, model_type: str, cut: bo
     def cnn_data_preprocessing(exp_data: tf.Tensor) -> tf.Tensor:
         tensor = tf.reshape(exp_data, [tf.shape(exp_data)[0], -1])
         return tensor, tensor
-    
+
     preprocessing_func = dnn_data_preprocessing if model_type == "dnn" else cnn_data_preprocessing
+
     def data_pipeline(file_path: str) -> tf.Tensor:
         [exp_data,] = tf.py_function(load_numpy_file, [file_path], [tf.float32,])
         exp_data.set_shape(shape)
         inputs, outputs = preprocessing_func(exp_data)
         return inputs, outputs
-    
+
     file_pattern = str(series_dir) + "/*/StateMetric/results_t200000.npy"
     dataset = tf.data.Dataset.list_files(file_pattern=file_pattern, shuffle=False)
     dataset = dataset.map(data_pipeline, num_parallel_calls=tf.data.experimental.AUTOTUNE).cache()
@@ -87,16 +88,19 @@ def load_all_datasets(series_dir: Path, downsampling: int) -> Dict[str, tf.data.
     Returns:
         Dict[str, tf.data.Dataset]: Dictionary storing all the datasets loaded with their unique keys. 
     """
-    
+
     datasets = dict()
     for model_type in MODEL_TYPES:
         for input_type in INPUT_TYPES:
             key = "-".join((model_type, input_type))
-            
-            dataset = create_dataset(series_dir=series_dir, downsampling=downsampling, model_type=model_type, cut=(input_type == "cut"))
+
+            dataset = create_dataset(series_dir=series_dir,
+                                     downsampling=downsampling,
+                                     model_type=model_type,
+                                     cut=(input_type == "cut"))
             dataset = dataset.shuffle(buffer_size=20_000).batch(128).prefetch(tf.data.experimental.AUTOTUNE)
             datasets[key] = dataset
-    
+
     return datasets
 
 
@@ -106,11 +110,14 @@ def determine_input_shapes(datasets: Dict[str, tf.data.Dataset]) -> Dict[str, Tu
         for data in datasets[dataset]:
             input_shapes[dataset] = data[0].shape[1:]
             break
-    
+
     return input_shapes
 
 
-def get_dnn_autoencoder_model(input_shape: int, layer_sizes: Tuple[int], dropout_rate: float, sigmoid=False) -> Model:
+def get_dnn_autoencoder_model(input_shape: int,
+                              layer_sizes: Tuple[int],
+                              dropout_rate: float,
+                              sigmoid=False) -> Model:
     model_input = model = Input(shape=input_shape)
 
     for layer_size in layer_sizes[:-1]:
