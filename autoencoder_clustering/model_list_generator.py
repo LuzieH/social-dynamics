@@ -84,7 +84,7 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
 
                     embedding_size = embedding_len * final_filters
                     # DNN models have an embedding size in [128, 512], so should also CNNs
-                    if not (128 < embedding_size < 512):
+                    if not (128 <= embedding_size <= 512):
                         continue
 
                     starting_filters = rng.choice((256, 128))
