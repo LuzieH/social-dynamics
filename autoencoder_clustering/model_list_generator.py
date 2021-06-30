@@ -151,13 +151,13 @@ def compute_n_params_distributions(models_kwargs: Dict[str, List[ModelKwargs]],
         model_type, input_type = key.split("-")
         input_shape = input_shapes[key]
         key_n_params = []
-        for model_kwargs in models_kwargs[key]:
+        for model_kwargs in tqdm(models_kwargs[key]):
             if model_type == "cnn":
                 model = get_cnn_autoencoder_model(input_shape, **model_kwargs, sigmoid=False)
             else:
                 model = get_dnn_autoencoder_model(input_shape, **model_kwargs, sigmoid=False)
 
-            model_n_params = np.sum([np.prod(v.get_shape().as_list()) for v in model.trainable_variables()])
+            model_n_params = np.sum([np.prod(v.get_shape().as_list()) for v in model.trainable_variables])
 
             key_n_params.append(model_n_params)
 
@@ -173,11 +173,14 @@ def main(_) -> None:
 
     root_path = Path(FLAGS.root_dir)
 
+    print("GENERATING MODELS KWARGS")
     models_kwargs = generate_models_kwargs()
 
+    print("DETERMINING INPUT SHAPES")
     input_shapes = determine_input_shapes(
         load_all_datasets(series_dir=root_path.joinpath(FLAGS.series_dir), downsampling=downsampling))
 
+    print("cOMPUTING N_PARAMS DISTRIBUTIONS")
     models_n_params = compute_n_params_distributions(models_kwargs=models_kwargs, input_shapes=input_shapes)
 
     # Saving the distributions of model complexities that have been computed for analysis
