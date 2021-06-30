@@ -84,7 +84,7 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
 
                     embedding_size = embedding_len * final_filters
                     # DNN models can't have an embedding size larger than 512, so should also CNNs
-                    if embedding_size > 512:
+                    if (embedding_size < 0) or (512 < embedding_size):
                         continue
 
                     starting_filters = rng.choice((256, 128))
@@ -173,14 +173,14 @@ def main(_) -> None:
 
     root_path = Path(FLAGS.root_dir)
 
-    print("GENERATING MODELS KWARGS")
+    print("\n\nGENERATING MODELS KWARGS\n\n")
     models_kwargs = generate_models_kwargs()
 
-    print("DETERMINING INPUT SHAPES")
+    print("\n\nDETERMINING INPUT SHAPES\n\n")
     input_shapes = determine_input_shapes(
         load_all_datasets(series_dir=root_path.joinpath(FLAGS.series_dir), downsampling=downsampling))
 
-    print("cOMPUTING N_PARAMS DISTRIBUTIONS")
+    print("\n\nCOMPUTING N_PARAMS DISTRIBUTIONS\n\n")
     models_n_params = compute_n_params_distributions(models_kwargs=models_kwargs, input_shapes=input_shapes)
 
     # Saving the distributions of model complexities that have been computed for analysis
