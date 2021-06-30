@@ -64,7 +64,7 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
             return filters
         
         cnn_kwargs_list = []
-        for n_layers in range(8, 12):
+        for n_layers in range(10, 14):
             stridesss = np.array(list(product((1, 2), repeat=n_layers)))
             
             n_samples_per_layer = 55*2**(n_layers-8)
@@ -89,7 +89,7 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
                 if not (128 <= embedding_size <= 512):
                     continue
 
-                starting_filters = rng.choice((512, 256, 128))
+                starting_filters = rng.choice((512, 256))
 
                 filters = generate_n_filters_sequence(starting_filters=starting_filters,
                                                     final_filters=final_filters)
