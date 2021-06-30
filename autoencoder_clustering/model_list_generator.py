@@ -13,10 +13,12 @@ from social_dynamics.autoencoder_utils import get_dnn_autoencoder_model, get_cnn
 
 import tensorflow as tf
 from tqdm import tqdm
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 downsampling = 4
-ModelKwargs = Dict[str, Any]
+DnnModelKwargs = Dict[str, Union[Tuple[int], float]]
+CnnModelKwargs = Dict[str, Union[List[Dict[str, int]], float]]
+ModelKwargs = Union[CnnModelKwargs, DnnModelKwargs]
 
 
 def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
@@ -30,7 +32,7 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
     models_kwargs = dict()
 
     # CNN-type autoencoders.
-    def generate_cnn_kwargs_list(time_series_length: int) -> List[ModelKwargs]:
+    def generate_cnn_kwargs_list(time_series_length: int) -> List[CnnModelKwargs]:
         """Generates a list of model kwargs for CNN-type autoencoders. These models are valid for time-series
         of the given length.
         
@@ -44,16 +46,33 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
         Returns:
             List[ModelParams]: List of kwargs for all the models selected.
         """
+        
+        def generate_n_filters_sequence(starting_filters: int, final_filters: int) -> List[int]:
+            possible_filters_reductions = list(product((1, 2), repeat=n_layers - 2))
+            filters_reductions = possible_filters_reductions[rng.choice(
+                len(possible_filters_reductions))]
+            while (starting_filters / np.product(filters_reductions)) < final_filters:
+                filters_reductions = possible_filters_reductions[rng.choice(
+                    len(possible_filters_reductions))]
+
+            filters = ([starting_filters] +
+                       [int(starting_filters / np.prod(filters_reductions[:i + 1]))
+                        for i in range(len(filters_reductions))
+                        ] +
+                       [final_filters])
+
+            return filters
+        
         cnn_kwargs_list = []
         for n_layers in range(6, 10):
+            # This n_samples value has been empirically determined to make ti so that we get ~200 models
+            # for every n_layer. This makes the total number of CNNs comparable to the DNNs.
+            n_samples = int(512 / 2.2**(n_layers - 6))
             for stridess in tqdm(list(product((1, 2), repeat=n_layers))):
-                # This n_samples value has been empirically determined to make ti so that we get ~200 models
-                # for every n_layer. This makes the total number of CNNs comparable to the DNNs.
-                n_samples = int(512 / 2.2**(n_layers - 6))
                 for kernel_sizes in rng.choice(np.arange(3, 10), (n_samples, n_layers)):
                     layers_kwargs = [{
-                        "kernel_size": kernel_size,
-                        "strides": strides
+                        "kernel_size": int(kernel_size),
+                        "strides": int(strides)
                     } for kernel_size, strides in zip(kernel_sizes, stridess)]
 
                     embedding_len = compute_embedding_length(time_series_length=time_series_length,
@@ -70,19 +89,11 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
 
                     starting_filters = rng.choice((256, 128))
 
-                    possible_filters_reductions = list(product((1, 2), repeat=n_layers - 2))
-                    filters_reductions = possible_filters_reductions[rng.choice(
-                        len(possible_filters_reductions))]
-                    while (starting_filters / np.product(filters_reductions)) < final_filters:
-                        filters_reductions = possible_filters_reductions[rng.choice(
-                            len(possible_filters_reductions))]
-
-                    filters = ([starting_filters] + [
-                        starting_filters / np.prod(filters_reductions[:i + 1])
-                        for i in range(len(filters_reductions))
-                    ] + [final_filters])
+                    filters = generate_n_filters_sequence(starting_filters=starting_filters,
+                                                          final_filters=final_filters)
+                    
                     for i, layer_kwargs in enumerate(layers_kwargs):
-                        layer_kwargs["filters"] = filters[i]
+                        layer_kwargs["filters"] = int(filters[i])
 
                     dropout_rate = rng.choice((0.05, 0.1))
 
@@ -137,10 +148,10 @@ def compute_n_params_distributions(models_kwargs: Dict[str, List[ModelKwargs]],
     """
     n_params = dict()
     for key in models_kwargs:
+        model_type, input_type = key.split("-")
+        input_shape = input_shapes[key]
         key_n_params = []
         for model_kwargs in models_kwargs[key]:
-            model_type, input_type = key.split("-")
-            input_shape = input_shapes[key]
             if model_type == "cnn":
                 model = get_cnn_autoencoder_model(input_shape, **model_kwargs, sigmoid=False)
             else:
