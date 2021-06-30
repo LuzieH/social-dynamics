@@ -1,15 +1,15 @@
 from absl import app
 from absl import flags
 from absl import logging
-#%%
+
 from itertools import product
 import numpy as np
 from pathlib import Path
 import pickle
 
-from social_dynamics.autoencoder_utils import load_all_datasets, determine_input_shapes
+from social_dynamics.autoencoder_utils import determine_input_shapes, load_all_datasets
 from social_dynamics.autoencoder_utils import compute_embedding_length
-from social_dynamics.autoencoder_utils import get_dnn_autoencoder_model, get_cnn_autoencoder_model
+from social_dynamics.autoencoder_utils import get_cnn_autoencoder_model, get_dnn_autoencoder_model
 
 import tensorflow as tf
 from tqdm import tqdm
@@ -20,7 +20,7 @@ DnnModelKwargs = Dict[str, Union[Tuple[int], float]]
 CnnModelKwargs = Dict[str, Union[List[Dict[str, int]], float]]
 ModelKwargs = Union[CnnModelKwargs, DnnModelKwargs]
 
-#%%
+
 def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
     """Generates the kwargs for the autoencoder models to be trained.
 
@@ -63,11 +63,13 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
 
             return filters
         
+        min_n_layers = 10
+        max_n_layers = 13
         cnn_kwargs_list = []
-        for n_layers in range(10, 14):
+        for n_layers in range(min_n_layers, max_n_layers+1):
             stridesss = np.array(list(product((1, 2), repeat=n_layers)))
             
-            n_samples_per_layer = 55*2**(n_layers-8)
+            n_samples_per_layer = 55*2**(n_layers-min_n_layers)
             layer_model_samples = []
             while len(layer_model_samples) < n_samples_per_layer:
                 stridess = stridesss[rng.choice(stridesss.shape[0])]
@@ -133,7 +135,7 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
 
     return models_kwargs
 
-#%%
+
 def compute_n_params_distributions(models_kwargs: Dict[str, List[ModelKwargs]],
                                    input_shapes: Dict[str, Tuple[int]]) -> Dict[str, np.ndarray]:
     """Iterates through all possible models of all possible types to determine how many parameters
