@@ -17,6 +17,9 @@ INPUT_TYPES = ["complete", "cut"]
 def compute_embedding_length(time_series_length: int, layers_kwargs: List[Dict[str, int]]) -> int:
     current_len = time_series_length
     for layer_kwargs in layers_kwargs:
+        if current_len < layer_kwargs["kernel_size"]:
+            return -1
+        
         current_len = (current_len - layer_kwargs["kernel_size"]) / layer_kwargs["strides"] + 1
         if current_len % 1:
             return -1
