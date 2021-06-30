@@ -136,7 +136,7 @@ def get_dnn_autoencoder_model(input_shape: int,
     else:
         model = Dense(input_shape[0], activation='linear')(model)
     model = Model(inputs=model_input, outputs=model)
-    opt_m1 = Adam(lr=0.00001)
+    opt_m1 = Adam(learning_rate=0.00001)
     model.compile(optimizer=opt_m1, loss="mean_squared_error", metrics=['mse'])
     return model
 
@@ -169,7 +169,7 @@ def get_cnn_autoencoder_model(input_shape: Tuple[int],
                                 filters=input_shape[1],
                                 activation='linear')(model)
     model = Model(inputs=model_input, outputs=model)
-    opt_m1 = Adam(lr=0.00001)
+    opt_m1 = Adam(learning_rate=0.00001)
     model.compile(optimizer=opt_m1, loss="mean_squared_error", metrics=['mse'])
     return model
 
