@@ -1,7 +1,7 @@
 from absl import app
 from absl import flags
 from absl import logging
-
+#%%
 from itertools import product
 import numpy as np
 from pathlib import Path
@@ -20,7 +20,7 @@ DnnModelKwargs = Dict[str, Union[Tuple[int], float]]
 CnnModelKwargs = Dict[str, Union[List[Dict[str, int]], float]]
 ModelKwargs = Union[CnnModelKwargs, DnnModelKwargs]
 
-
+#%%
 def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
     """Generates the kwargs for the autoencoder models to be trained.
 
@@ -64,41 +64,46 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
             return filters
         
         cnn_kwargs_list = []
-        for n_layers in range(6, 10):
-            # This n_samples value has been empirically determined to make ti so that we get ~200 models
-            # for every n_layer. This makes the total number of CNNs comparable to the DNNs.
-            n_samples = int(512 / 2.2**(n_layers - 6))
-            for stridess in tqdm(list(product((1, 2), repeat=n_layers))):
-                for kernel_sizes in rng.choice(np.arange(3, 10), (n_samples, n_layers)):
-                    layers_kwargs = [{
-                        "kernel_size": int(kernel_size),
-                        "strides": int(strides)
-                    } for kernel_size, strides in zip(kernel_sizes, stridess)]
+        for n_layers in range(8, 12):
+            stridesss = np.array(list(product((1, 2), repeat=n_layers)))
+            
+            n_samples_per_layer = 55*2**(n_layers-8)
+            layer_model_samples = []
+            while len(layer_model_samples) < n_samples_per_layer:
+                stridess = stridesss[rng.choice(stridesss.shape[0])]
+                kernel_sizes = rng.choice(np.arange(3, 10), n_layers)
+                layers_kwargs = [{
+                    "kernel_size": int(kernel_size),
+                    "strides": int(strides)
+                } for kernel_size, strides in zip(kernel_sizes, stridess)]
 
-                    embedding_len = compute_embedding_length(time_series_length=time_series_length,
-                                                             layers_kwargs=layers_kwargs)
-                    if embedding_len == -1:
-                        continue
+                embedding_len = compute_embedding_length(time_series_length=time_series_length,
+                                                        layers_kwargs=layers_kwargs)
+                if embedding_len == -1:
+                    continue
 
-                    final_filters = rng.choice((8, 16, 32))
+                final_filters = rng.choice((8, 16, 32))
 
-                    embedding_size = embedding_len * final_filters
-                    # DNN models have an embedding size in [128, 512], so should also CNNs
-                    if not (128 <= embedding_size <= 512):
-                        continue
+                embedding_size = embedding_len * final_filters
+                # DNN models have an embedding size in [128, 512], so should also CNNs
+                if not (128 <= embedding_size <= 512):
+                    continue
 
-                    starting_filters = rng.choice((256, 128))
+                starting_filters = rng.choice((512, 256, 128))
 
-                    filters = generate_n_filters_sequence(starting_filters=starting_filters,
-                                                          final_filters=final_filters)
-                    
-                    for i, layer_kwargs in enumerate(layers_kwargs):
-                        layer_kwargs["filters"] = int(filters[i])
+                filters = generate_n_filters_sequence(starting_filters=starting_filters,
+                                                    final_filters=final_filters)
+                
+                for i, layer_kwargs in enumerate(layers_kwargs):
+                    layer_kwargs["filters"] = int(filters[i])
 
-                    dropout_rate = rng.choice((0.05, 0.1))
+                dropout_rate = rng.choice((0.05, 0.1))
 
-                    model_kwargs = {"layers_kwargs": layers_kwargs, "dropout_rate": dropout_rate}
-                    cnn_kwargs_list.append(model_kwargs)
+                model_kwargs = {"layers_kwargs": layers_kwargs, "dropout_rate": dropout_rate}
+                layer_model_samples.append(model_kwargs)
+            
+            
+            cnn_kwargs_list += layer_model_samples
 
         return cnn_kwargs_list
 
@@ -128,7 +133,7 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
 
     return models_kwargs
 
-
+#%%
 def compute_n_params_distributions(models_kwargs: Dict[str, List[ModelKwargs]],
                                    input_shapes: Dict[str, Tuple[int]]) -> Dict[str, np.ndarray]:
     """Iterates through all possible models of all possible types to determine how many parameters
