@@ -182,6 +182,8 @@ def main(_) -> None:
 
     print("\n\nCOMPUTING N_PARAMS DISTRIBUTIONS\n\n")
     models_n_params = compute_n_params_distributions(models_kwargs=models_kwargs, input_shapes=input_shapes)
+    
+    root_path.mkdir(parents=True)
 
     # Saving the distributions of model complexities that have been computed for analysis
     for key in models_n_params:
