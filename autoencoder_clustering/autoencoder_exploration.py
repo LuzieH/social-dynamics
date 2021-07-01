@@ -39,7 +39,7 @@ def main(_) -> None:
         models_kwargs = pickle.load(handle)
     
     
-    keys = models_kwargs.keys()
+    keys = list(models_kwargs.keys())
     rng = np.random.default_rng()
     rng.shuffle(keys)
     for key in keys:
