@@ -27,6 +27,7 @@ def generate_experiment_name(key: str, model_index: int) -> str:
 def main(_) -> None:
     logging.set_verbosity(logging.INFO)
     root_dir = Path(FLAGS.root_dir)
+    results_dir = root_dir.joinpath("autoencoders_results")
     series_dir = Path(FLAGS.series_dir)
     
     
@@ -34,7 +35,7 @@ def main(_) -> None:
     
     input_shapes = determine_input_shapes(datasets)
     
-    with open('models_kwargs.pickle', 'rb') as handle:
+    with open(root_dir.joinpath('models_kwargs.pickle'), 'rb') as handle:
         models_kwargs = pickle.load(handle)
     
     
@@ -51,7 +52,7 @@ def main(_) -> None:
         
         experiment_params_list = [(key, model_index) for model_index in range(len(models_kwargs[key]))]
         experiment_params_batch = utility.generate_experiment_params_batch(
-            all_results_dir=root_dir,
+            all_results_dir=results_dir,
             experiment_params_list=experiment_params_list,
             experiment_name_generator=generate_experiment_name,
             batch_size=FLAGS.batch_size)
@@ -67,7 +68,7 @@ def main(_) -> None:
                 model_hist = model.fit(dataset, epochs=30, verbose=0)
                 
                 experiment_name = generate_experiment_name(key, model_index)
-                model_results_path = root_dir.joinpath(experiment_name)
+                model_results_path = results_dir.joinpath(experiment_name)
                 model_results_path.mkdir(parents=True, exist_ok=True)
                 np.save(model_results_path.joinpath("history.npy"), model_hist.history)
                 
@@ -79,7 +80,7 @@ def main(_) -> None:
                 tf.keras.backend.clear_session()
             
             experiment_params_batch = utility.generate_experiment_params_batch(
-                all_results_dir=root_dir,
+                all_results_dir=results_dir,
                 experiment_params_list=experiment_params_list,
                 experiment_name_generator=generate_experiment_name,
                 batch_size=FLAGS.batch_size)
