@@ -60,17 +60,22 @@ def main(_) -> None:
         while experiment_params_batch:
             for experiment_params in tqdm(experiment_params_batch):
                 model_index = experiment_params["model_index"]
+                
+                experiment_name = generate_experiment_name(key, model_index)
+                model_results_path = results_dir.joinpath(experiment_name)
+                if not utility.check_lock(model_results_path): continue
+                utility.acquire_lock(model_results_path)
+                
                 model_kwargs = models_kwargs[key][model_index]
                 if model_type == "cnn":
                     model = get_cnn_autoencoder_model(input_shape, **model_kwargs, sigmoid=False)
                 else:
                     model = get_dnn_autoencoder_model(input_shape, **model_kwargs, sigmoid=False)
                 
-                
                 model_hist = model.fit(dataset, epochs=30, verbose=0)
                 
-                experiment_name = generate_experiment_name(key, model_index)
-                model_results_path = results_dir.joinpath(experiment_name)
+                
+                
                 model_results_path.mkdir(parents=True, exist_ok=True)
                 np.save(model_results_path.joinpath("history.npy"), model_hist.history)
                 
@@ -80,6 +85,9 @@ def main(_) -> None:
                 np.save(model_results_path.joinpath("mses.npy"), mses)
                 
                 tf.keras.backend.clear_session()
+                
+                utility.release_lock(model_results_path)
+            
             
             experiment_params_batch = utility.generate_experiment_params_batch(
                 all_results_dir=results_dir,
