@@ -109,8 +109,8 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
 
         return cnn_kwargs_list
 
-    models_kwargs["cnn-complete"] = [(i, model_kwargs) for i, model_kwargs in enumerate(generate_cnn_kwargs_list(1000))]
-    models_kwargs["cnn-cut"] = [(i, model_kwargs) for i, model_kwargs in enumerate(generate_cnn_kwargs_list(250))]
+    models_kwargs["cnn-complete"] = generate_cnn_kwargs_list(1000)
+    models_kwargs["cnn-cut"] = generate_cnn_kwargs_list(250)
 
     # DNN-type autoencoders.
     FIRST_LAYER_SIZES = (4096, 2048, 1024)
@@ -131,7 +131,7 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
                   for dropout_rate in (0.05, 0.1)
                   if (first_layer_size / np.prod(layers_reductions[:n_layers])) >= embedding_size]
 
-    models_kwargs["dnn-complete"] = models_kwargs["dnn-cut"] = [(i, model_kwargs) for i, model_kwargs in enumerate(dnn_kwargs)]
+    models_kwargs["dnn-complete"] = models_kwargs["dnn-cut"] = dnn_kwargs
 
     return models_kwargs
 
