@@ -58,7 +58,8 @@ def main(_) -> None:
             experiment_name_generator=generate_experiment_name,
             batch_size=FLAGS.batch_size)
         while experiment_params_batch:
-            for _, model_index in tqdm(experiment_params_batch):
+            for experiment_params in tqdm(experiment_params_batch):
+                model_index = experiment_params["model_index"]
                 model_kwargs = models_kwargs[key][model_index]
                 if model_type == "cnn":
                     model = get_cnn_autoencoder_model(input_shape, **model_kwargs, sigmoid=False)
