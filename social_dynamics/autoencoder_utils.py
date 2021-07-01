@@ -101,7 +101,6 @@ def load_all_datasets(series_dir: Path, downsampling: int) -> Dict[str, tf.data.
                                      downsampling=downsampling,
                                      model_type=model_type,
                                      cut=(input_type == "cut"))
-            dataset = dataset.shuffle(buffer_size=20_000).batch(128).prefetch(tf.data.experimental.AUTOTUNE)
             datasets[key] = dataset
 
     return datasets
