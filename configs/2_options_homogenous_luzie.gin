@@ -1,3 +1,6 @@
 include "homogenous_luzie_net.gin"
 
+run_experiment.experiment_name = '2_options_homogenous_luzie'
+
+
 n_options = 2
