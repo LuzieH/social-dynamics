@@ -74,7 +74,7 @@ def setup_metrics(checkpoint_interval: int, metrics_interval: int, metrics: List
 
 def generate_experiment_params_batch(all_results_dir: Path, experiment_params_list: List[ExperimentParams],
                                      experiment_name_generator: Callable[[ExperimentParams], str],
-                                     batch_size: int) -> Union[None, np.ndarray]:
+                                     batch_size: int) -> List[ExperimentParams]:
     """Returns a batch of yet to-be-done experiments.
     
     Note that this does not avoid multiple processes trying to work on the same experiment at the same time.
