@@ -194,7 +194,7 @@ def main(_) -> None:
 
     # Saving the distributions of model complexities that have been computed for analysis
     for key in models_n_params:
-        np.save(root_path.joinpath(key + ".npy"), models_n_params[key])
+        np.save(root_path.joinpath(key + "-n_params_distribution" + ".npy"), models_n_params[key])
 
     # Saving the dict of model params. This will be iterated upon when exploring the possible
     # autoencoder choices
