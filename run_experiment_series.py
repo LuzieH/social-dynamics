@@ -22,12 +22,14 @@ def generate_experiment_name(alpha: float, beta: float, gamma: float, delta: flo
 
 
 @gin.configurable
-def run_experiment(experiment_dir: Path, num_time_steps: int, agent_network: AgentNetwork,
+def run_experiment(series_dir: Path, experiment_name: str, num_time_steps: int, agent_network: AgentNetwork,
                    checkpoint_interval: int, metrics_interval: int) -> None:
     """Runs a single experiment in the series. Saves the results of the metrics 
 
     Args:
-        experiment_dir (Path): Directory to store the experiment's results.
+        series_dir (str): Identifier of the series of experiments that is being run.
+        experiment_name (str): unique identifier for the experiment configuration which is used to make
+                a results folder for this experiment run
         num_time_steps (int): Number of time steps to simulate. The time interval between each of these
                 time steps is controlled by the AgentNetwork object (in the cases in which the 
                 model assumes the existence of a time interval)
@@ -37,6 +39,7 @@ def run_experiment(experiment_dir: Path, num_time_steps: int, agent_network: Age
                 know the state of the network at every time step, but at every x time_steps. A longer interval
                 increases speed and reduces memory footprint (at the price of less data collected)
     """
+    experiment_dir = series_dir.joinpath(experiment_name)
     if not experiment_dir.is_dir():
         experiment_dir.mkdir(parents=True)
 
@@ -126,16 +129,19 @@ def run_experiment_series(root_dir: Path,
                 })
             experiment_name = generate_experiment_name(**experiment_params)
 
-            experiment_dir = series_dir.joinpath(experiment_name)
+            results_path = series_dir.joinpath(experiment_name)
 
-            if not utility.check_lock(experiment_dir):
+            if not utility.check_lock(results_path):
                 continue
 
-            utility.acquire_lock(experiment_dir)
+            utility.acquire_lock(results_path)
 
-            run_experiment(experiment_dir=experiment_dir, agent_network=agent_network, metrics_interval=50)
+            run_experiment(series_dir=series_dir,
+                           experiment_name=experiment_name,
+                           agent_network=agent_network,
+                           metrics_interval=50)
 
-            utility.release_lock(experiment_dir)
+            utility.release_lock(results_path)
 
         experiment_params_batch = utility.generate_experiment_params_batch(
             all_results_dir=series_dir,
