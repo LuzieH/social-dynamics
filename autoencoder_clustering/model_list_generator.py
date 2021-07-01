@@ -158,7 +158,7 @@ def compute_n_params_distributions(models_kwargs: Dict[str, List[ModelKwargs]],
         model_type, input_type = key.split("-")
         input_shape = input_shapes[key]
         key_n_params = []
-        for model_index, model_kwargs in tqdm(models_kwargs[key]):
+        for model_kwargs in tqdm(models_kwargs[key]):
             if model_type == "cnn":
                 model = get_cnn_autoencoder_model(input_shape, **model_kwargs, sigmoid=False)
             else:
