@@ -30,7 +30,7 @@ def main(_) -> None:
     series_dir = Path(FLAGS.series_dir)
     
     
-    datasets = load_all_datasets(series_dir=series_dir)
+    datasets = load_all_datasets(series_dir=series_dir, downsampling=downsampling)
     
     input_shapes = determine_input_shapes(datasets)
     
