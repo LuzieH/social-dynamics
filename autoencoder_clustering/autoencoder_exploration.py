@@ -95,7 +95,7 @@ if __name__ == '__main__':
     flags
     FLAGS = flags.FLAGS
     flags.mark_flag_as_required('root_dir')
-    flags.mark_flag_as_required('series_name')
+    flags.mark_flag_as_required('series_dir')
     
     gpus = tf.config.experimental.list_physical_devices('GPU')
     tf.config.experimental.set_memory_growth(gpus[0], True)
