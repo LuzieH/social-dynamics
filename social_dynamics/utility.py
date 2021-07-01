@@ -4,11 +4,11 @@ from pathlib import Path
 from social_dynamics import agent_networks
 from social_dynamics.agent_networks import god_agent_network, luzie_agent_network
 from social_dynamics.metrics.metric import Metric
-from typing import Dict, List
-
+from typing import Any, Callable, Dict, List, Union
 
 IMPLEMENTED_MODELS = ['general_opinion_dynamics', 'luzie_network']
 LOCKS_PATH = Path("locks")
+ExperimentParams = Dict[str, Any]
 
 
 def load_gin_configs(gin_files: List[str], gin_bindings: List[str]) -> None:
@@ -64,12 +64,59 @@ def setup_metrics(checkpoint_interval: int, metrics_interval: int, metrics: List
         raise ValueError("Checkpointing interval is supposed to be a multiple of the metrics interval. "
                          f"Got instead checkpoint_interval:{checkpoint_interval} "
                          f"and metrics_interval: {metrics_interval}")
-    
-    buffer_size = checkpoint_interval//metrics_interval
-    
+
+    buffer_size = checkpoint_interval // metrics_interval
+
     built_metrics = [metric(buffer_size=buffer_size) for metric in metrics]
-    
+
     return built_metrics
+
+
+def generate_experiment_params_batch(all_results_dir: Path, experiment_params_list: List[ExperimentParams],
+                                     experiment_name_generator: Callable[[ExperimentParams], str],
+                                     batch_size: int) -> Union[None, np.ndarray]:
+    """Returns a batch of yet to-be-done experiments.
+    
+    Note that this does not avoid multiple processes trying to work on the same experiment at the same time.
+    It also does not avoid the fact that a process might meet an already done experiment.
+    
+    E.g. process A gets experiment x as 3rd element in its uncompleted batch and process B gets experiment x
+    as 17th elements in its uncompleted batch. Process B will have to  check that indeed the experiment has
+    already been done by the time it reached it (most likely).
+
+
+    Args:
+        all_results_dir (Path): Directory where the results of all the experiments are to be stored.
+        experiment_params_list (List[ExperimentParams]): List of experiment params that uniquely identify
+                    every experiment.
+        experiment_name_generator (Callable[[ExperimentParams], str]): Function that takes in input the
+                    experiment params of an experiment and returns it's unique name used for it's folder.
+        batch_size (int): Size of the batch of to-be-done experiments that must be returned.
+
+    Returns:
+        Union[None, np.ndarray]: None if there are no experiments left to run, list of experiment params
+                    otherwise
+    """
+    experiment_path_list = [
+        all_results_dir.joinpath(experiment_name_generator(**experiment_params))
+        for experiment_params in experiment_params_list
+    ]
+
+    completed_experiments = np.array(list(all_results_dir.iterdir()))
+    
+    to_do_experiments_indices = np.argwhere(~np.isin(experiment_path_list, completed_experiments))
+
+    to_do_experiments = [
+        experiment_params for i, experiment_params in enumerate(experiment_params_list)
+        if i in to_do_experiments_indices
+    ]
+
+    # The list gets shuffled to decrease the likelihood that multiple processes spawned at the same time
+    # might collide on the same locks. As such it is important not to pass a seed here.
+    rng = np.random.default_rng()
+    rng.shuffle(to_do_experiments)
+
+    return to_do_experiments[:batch_size]
 
 
 def check_lock(results_path: Path) -> bool:
@@ -106,5 +153,3 @@ def release_lock(results_path: Path) -> None:
     lock_name = results_path.name + ".npy"
     lock_path = LOCKS_PATH.joinpath(lock_name)
     lock_path.unlink()
-
-

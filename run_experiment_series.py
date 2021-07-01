@@ -8,48 +8,12 @@ import numpy as np
 import os
 from pathlib import Path
 from tqdm import tqdm
-from typing import Optional, Union
+from typing import Optional
 
 from social_dynamics import utility
 from social_dynamics.agent_networks.agent_network import AgentNetwork
 from social_dynamics.agent_networks.god_agent_network.god_agent_network import GODAgentNetwork
 from social_dynamics.agent_networks.luzie_agent_network.luzie_agent_network import LuzieAgentNetwork
-
-
-def generate_experiment_params_batch(series_dir: Path, batch_size: int) -> Union[None, np.ndarray]:
-    """Returns a batch of yet to-be-done experiments.
-    
-    Note that this does not avoid multiple processes trying to work on the same experiment at the same time.
-    It also does not avoid the fact that a process might meet an already done experiment.
-    
-    E.g. process A gets experiment x as 3rd element in its uncompleted batch and process B gets experiment x
-    as 17th elements in its uncompleted batch. Process B will have to  check that indeed the experiment has
-    already been done by the time it reached it (most likely).
-
-    Args:
-        series_dir (Path): Directory where the results of all the experiments in the series are to be stored.
-
-    Returns:
-        Union[None, np.ndarray]: None if there are no experiments left to run, list of experiment params
-                    otherwise
-    """
-    experiment_params_array = np.array(list(product(np.linspace(-2, 2, 11), repeat=4)))
-    experiment_path_list = [
-        series_dir.joinpath(generate_experiment_name(alpha=alpha, beta=beta, gamma=gamma, delta=delta))
-        for alpha, beta, gamma, delta in experiment_params_array
-    ]
-
-    completed_experiments = np.array(list(series_dir.iterdir()))
-
-    to_do_experiments = experiment_params_array[~np.isin(experiment_path_list, completed_experiments)].tolist(
-    )
-
-    # The list gets shuffled to decrease the likelihood that multiple processes spawned at the same time
-    # might collide on the same locks.
-    rng = np.random.default_rng()
-    rng.shuffle(to_do_experiments)
-
-    return to_do_experiments[:batch_size]
 
 
 def generate_experiment_name(alpha: float, beta: float, gamma: float, delta: float) -> str:
@@ -141,21 +105,26 @@ def run_experiment_series(root_dir: Path,
     # The reason for sampling batches multiple times instead of just iterating through everything is that
     # this way we regularly clearup any experiments already done. This saves on a lot of I/O operations
     # to the disk, particularly towards the end when there can be thousands of folders already done.
-    experiment_params_batch = generate_experiment_params_batch(series_dir=series_dir, batch_size=batch_size)
+    experiment_params_list = [{"alpha": alpha,
+                               "beta": beta,
+                               "gamma": gamma,
+                               "delta": delta
+                               }
+                              for alpha, beta, gamma, delta in product(np.linspace(-2, 2, 11), repeat=4)]
+    experiment_params_batch = utility.generate_experiment_params_batch(
+        all_results_dir=series_dir,
+        experiment_params_list=experiment_params_list,
+        experiment_name_generator=generate_experiment_name,
+        batch_size=batch_size)
     while experiment_params_batch:
-        for alpha, beta, gamma, delta in tqdm(experiment_params_batch):
+        for experiment_params in tqdm(experiment_params_batch):
             agent_network = LuzieAgentNetwork(
                 builders_kwargs={
                     "adj_matrix_builder_kwargs": dict(),
                     "agents_builder_kwargs": dict(),
-                    "parameters_builder_kwargs": {
-                        "alpha": alpha,
-                        "beta": beta,
-                        "gamma": gamma,
-                        "delta": delta
-                    }
+                    "parameters_builder_kwargs": experiment_params
                 })
-            experiment_name = generate_experiment_name(alpha=alpha, beta=beta, gamma=gamma, delta=delta)
+            experiment_name = generate_experiment_name(**experiment_params)
 
             experiment_dir = series_dir.joinpath(experiment_name)
 
@@ -164,13 +133,15 @@ def run_experiment_series(root_dir: Path,
 
             utility.acquire_lock(experiment_dir)
 
-            run_experiment(experiment_dir=experiment_dir,
-                           agent_network=agent_network,
-                           metrics_interval=50)
+            run_experiment(experiment_dir=experiment_dir, agent_network=agent_network, metrics_interval=50)
 
             utility.release_lock(experiment_dir)
 
-        experiment_params_batch = generate_experiment_params_batch(series_dir=series_dir, batch_size=batch_size)
+        experiment_params_batch = utility.generate_experiment_params_batch(
+            all_results_dir=series_dir,
+            experiment_params_list=experiment_params_list,
+            experiment_name_generator=generate_experiment_name,
+            batch_size=batch_size)
 
 
 def main(_) -> None:
