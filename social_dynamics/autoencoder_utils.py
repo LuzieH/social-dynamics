@@ -107,10 +107,22 @@ def load_all_datasets(series_dir: Path, downsampling: int) -> Dict[str, tf.data.
 
 
 def determine_input_shapes(datasets: Dict[str, tf.data.Dataset]) -> Dict[str, Tuple[int]]:
+    """Determines the input shape of all the datasets in the dictionary of datasets.
+    
+    Note that the Datasets MUST NOT have been batched.
+
+    Args:
+        datasets (Dict[str, tf.data.Dataset]): Dictionary containing all the datasets for which the 
+                    input_shape must be determined
+
+    Returns:
+        Dict[str, Tuple[int]]: Dictionary matching the input's structure and having the input shape
+                    tuples as values.
+    """
     input_shapes = dict()
     for dataset in datasets:
         for data in datasets[dataset]:
-            input_shapes[dataset] = data[0].shape[1:]
+            input_shapes[dataset] = data[0].shape
             break
 
     return input_shapes
