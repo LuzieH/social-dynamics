@@ -7,7 +7,6 @@ from itertools import product
 import numpy as np
 import os
 from pathlib import Path
-import time
 from tqdm import tqdm
 from typing import Optional, Union
 
@@ -15,8 +14,6 @@ from social_dynamics import utility
 from social_dynamics.agent_networks.agent_network import AgentNetwork
 from social_dynamics.agent_networks.god_agent_network.god_agent_network import GODAgentNetwork
 from social_dynamics.agent_networks.luzie_agent_network.luzie_agent_network import LuzieAgentNetwork
-
-LOCKS_PATH = Path("locks")
 
 
 def generate_experiment_params_batch(series_dir: Path, batch_size: int) -> Union[None, np.ndarray]:
@@ -58,43 +55,6 @@ def generate_experiment_params_batch(series_dir: Path, batch_size: int) -> Union
 def generate_experiment_name(alpha: float, beta: float, gamma: float, delta: float) -> str:
     return "{}alpha_{}beta_{}gamma_{}delta".format(np.round(alpha, 1), np.round(beta, 1), np.round(gamma, 1),
                                                    np.round(delta, 1))
-
-
-def check_lock(results_path: Path) -> bool:
-    """
-    Checks if the run defined by the results_path passed needs to be executed, and if so
-    checks that there isn't a lock already on it.
-
-    Returns:
-        bool: Whether to execute the run or not.
-    """
-    time.sleep(np.random.uniform(high=10))  # Decreases the likelihood of colliding processes on same lock
-    lock_name = results_path.name + ".npy"
-    lock_path = LOCKS_PATH.joinpath(lock_name)
-    if results_path.exists() or lock_path.exists():
-        return False
-
-    return True
-
-
-def acquire_lock(results_path: Path) -> None:
-    """
-    Adds a lock on the current run.
-    """
-    if not LOCKS_PATH.exists():
-        LOCKS_PATH.mkdir()
-    lock_name = results_path.name + ".npy"
-    lock_path = LOCKS_PATH.joinpath(lock_name)
-    np.save(lock_path, None)
-
-
-def release_lock(results_path: Path) -> None:
-    """
-    Releases the lock on the current run.
-    """
-    lock_name = results_path.name + ".npy"
-    lock_path = LOCKS_PATH.joinpath(lock_name)
-    lock_path.unlink()
 
 
 @gin.configurable
@@ -202,17 +162,17 @@ def run_experiment_series(root_dir: Path,
 
             results_path = series_dir.joinpath(experiment_name)
 
-            if not check_lock(results_path):
+            if not utility.check_lock(results_path):
                 continue
 
-            acquire_lock(results_path)
+            utility.acquire_lock(results_path)
 
             run_experiment(series_dir=series_dir,
                            experiment_name=experiment_name,
                            agent_network=agent_network,
                            metrics_interval=50)
 
-            release_lock(results_path)
+            utility.release_lock(results_path)
 
         experiment_params_batch = generate_experiment_params_batch(series_dir=series_dir, batch_size=batch_size)
 

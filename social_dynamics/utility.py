@@ -1,11 +1,14 @@
-from typing import Dict, List
 import gin
+import numpy as np
+from pathlib import Path
 from social_dynamics import agent_networks
 from social_dynamics.agent_networks import god_agent_network, luzie_agent_network
 from social_dynamics.metrics.metric import Metric
+from typing import Dict, List
 
 
 IMPLEMENTED_MODELS = ['general_opinion_dynamics', 'luzie_network']
+LOCKS_PATH = Path("locks")
 
 
 def load_gin_configs(gin_files: List[str], gin_bindings: List[str]) -> None:
@@ -67,5 +70,41 @@ def setup_metrics(checkpoint_interval: int, metrics_interval: int, metrics: List
     built_metrics = [metric(buffer_size=buffer_size) for metric in metrics]
     
     return built_metrics
+
+
+def check_lock(results_path: Path) -> bool:
+    """
+    Checks if the run defined by the results_path passed needs to be executed, and if so
+    checks that there isn't a lock already on it.
+
+    Returns:
+        bool: Whether to execute the run or not.
+    """
+    lock_name = results_path.name + ".npy"
+    lock_path = LOCKS_PATH.joinpath(lock_name)
+    if results_path.exists() or lock_path.exists():
+        return False
+
+    return True
+
+
+def acquire_lock(results_path: Path) -> None:
+    """
+    Adds a lock on the current run.
+    """
+    if not LOCKS_PATH.exists():
+        LOCKS_PATH.mkdir()
+    lock_name = results_path.name + ".npy"
+    lock_path = LOCKS_PATH.joinpath(lock_name)
+    np.save(lock_path, None)
+
+
+def release_lock(results_path: Path) -> None:
+    """
+    Releases the lock on the current run.
+    """
+    lock_name = results_path.name + ".npy"
+    lock_path = LOCKS_PATH.joinpath(lock_name)
+    lock_path.unlink()
 
 
