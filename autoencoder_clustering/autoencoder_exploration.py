@@ -50,7 +50,8 @@ def main(_) -> None:
         y_true = np.array(list(datasets[key].as_numpy_iterator()))[:, 1]
         input_shape = input_shapes[key]
         
-        experiment_params_list = [(key, model_index) for model_index in range(len(models_kwargs[key]))]
+        experiment_params_list = [{"key": key, "model_index": model_index}
+                                  for model_index in range(len(models_kwargs[key]))]
         experiment_params_batch = utility.generate_experiment_params_batch(
             all_results_dir=results_dir,
             experiment_params_list=experiment_params_list,
