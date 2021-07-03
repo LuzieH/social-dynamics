@@ -58,13 +58,16 @@ def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int)
             experiment_name_generator=generate_experiment_name,
             batch_size=batch_size)
         while experiment_params_batch:
-            for experiment_params in tqdm(experiment_params_batch):
+            for experiment_params in experiment_params_batch:
                 model_index = experiment_params["model_index"]
-                
                 experiment_name = generate_experiment_name(key, model_index)
-                model_results_path = results_dir_path.joinpath(experiment_name)
+                
+                model_results_path = results_dir_path.joinpath()
                 if not utility.check_lock(model_results_path): continue
+                
                 utility.acquire_lock(model_results_path)
+                
+                logging.info("Acquired lock on {}".format(experiment_name))
                 
                 model_kwargs = models_kwargs[key][model_index]
                 if model_type == "cnn":
@@ -73,20 +76,18 @@ def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int)
                     model = get_dnn_autoencoder_model(input_shape, **model_kwargs, sigmoid=False)
                 
                 model_hist = model.fit(dataset, epochs=30, verbose=0)
-                
+                y_preds = model.predict(y_true)
+                mses = MSE(y_true, y_preds).numpy()
                 
                 
                 model_results_path.mkdir(parents=True, exist_ok=True)
                 np.save(model_results_path.joinpath("history.npy"), model_hist.history)
-                
-                
-                y_preds = model.predict(y_true)
-                mses = MSE(y_true, y_preds).numpy()
                 np.save(model_results_path.joinpath("mses.npy"), mses)
                 
                 tf.keras.backend.clear_session()
                 
                 utility.release_lock(model_results_path)
+                logging.info("Saved and released lock on {}".format(experiment_name))
             
             
             experiment_params_batch = utility.generate_experiment_params_batch(
@@ -96,7 +97,7 @@ def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int)
                 batch_size=batch_size)
 
 
-def main(_) -> None:    
+def main(_) -> None:
     logging.set_verbosity(logging.WARNING)
     
     gpus = tf.config.experimental.list_physical_devices('GPU')
