@@ -24,18 +24,17 @@ def generate_experiment_name(key: str, model_index: int) -> str:
     return "{}-{}".format(key, model_index)
 
 
-def main(_) -> None:
-    logging.set_verbosity(logging.INFO)
-    root_dir = Path(FLAGS.root_dir)
-    results_dir = root_dir.joinpath("autoencoders_results")
-    series_dir = Path(FLAGS.series_dir)
+def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int) -> None:
+    root_dir_path = Path(root_dir)
+    results_dir_path = root_dir_path.joinpath("autoencoders_results")
+    series_dir_path = Path(series_dir)
     
     
-    datasets = load_all_datasets(series_dir=series_dir, downsampling=downsampling)
+    datasets = load_all_datasets(series_dir=series_dir_path, downsampling=downsampling)
     
     input_shapes = determine_input_shapes(datasets)
     
-    with open(root_dir.joinpath('models_kwargs.pickle'), 'rb') as handle:
+    with open(root_dir_path.joinpath('models_kwargs.pickle'), 'rb') as handle:
         models_kwargs = pickle.load(handle)
     
     
@@ -44,25 +43,26 @@ def main(_) -> None:
     rng.shuffle(keys)
     for key in keys:
         model_type, input_type = key.split("-")
+        experiment_params_list = [{"key": key, "model_index": model_index}
+                                  for model_index in range(len(models_kwargs[key]))]
         
         
         dataset = datasets[key].shuffle(buffer_size=20_000).batch(128).prefetch(tf.data.experimental.AUTOTUNE)
         y_true = np.array(list(datasets[key].as_numpy_iterator()))[:, 1]
         input_shape = input_shapes[key]
         
-        experiment_params_list = [{"key": key, "model_index": model_index}
-                                  for model_index in range(len(models_kwargs[key]))]
+        
         experiment_params_batch = utility.generate_experiment_params_batch(
-            all_results_dir=results_dir,
+            all_results_dir=results_dir_path,
             experiment_params_list=experiment_params_list,
             experiment_name_generator=generate_experiment_name,
-            batch_size=FLAGS.batch_size)
+            batch_size=batch_size)
         while experiment_params_batch:
             for experiment_params in tqdm(experiment_params_batch):
                 model_index = experiment_params["model_index"]
                 
                 experiment_name = generate_experiment_name(key, model_index)
-                model_results_path = results_dir.joinpath(experiment_name)
+                model_results_path = results_dir_path.joinpath(experiment_name)
                 if not utility.check_lock(model_results_path): continue
                 utility.acquire_lock(model_results_path)
                 
@@ -90,10 +90,19 @@ def main(_) -> None:
             
             
             experiment_params_batch = utility.generate_experiment_params_batch(
-                all_results_dir=results_dir,
+                all_results_dir=results_dir_path,
                 experiment_params_list=experiment_params_list,
                 experiment_name_generator=generate_experiment_name,
-                batch_size=FLAGS.batch_size)
+                batch_size=batch_size)
+
+
+def main(_) -> None:    
+    logging.set_verbosity(logging.WARNING)
+    
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    tf.config.experimental.set_memory_growth(gpus[0], True)
+    
+    run_autoencoder_exploration(root_dir_path=FLAGS.root_dir, series_dir_path=FLAGS.series_dir, batch_size=FLAGS.batch_size)
     
 
 
@@ -103,13 +112,9 @@ if __name__ == '__main__':
     flags.DEFINE_string('series_dir', os.getenv('TEST_UNDECLARED_OUTPUTS_DIR'),
                         'Path to the experiment series to train the autoencoders on.')
     flags.DEFINE_integer('batch_size', 10, 'Batch size for the experiment loop.')
-    flags
     FLAGS = flags.FLAGS
     flags.mark_flag_as_required('root_dir')
     flags.mark_flag_as_required('series_dir')
     
-    gpus = tf.config.experimental.list_physical_devices('GPU')
-    tf.config.experimental.set_memory_growth(gpus[0], True)
-
     app.run(main)
 
