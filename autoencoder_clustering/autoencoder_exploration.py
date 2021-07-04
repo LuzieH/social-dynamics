@@ -15,9 +15,9 @@ import tensorflow as tf
 from tensorflow.keras.losses import MSE
 
 
-LOGGING_DICT = {"debug": logging.debug,
-                "info": logging.info,
-                "warning": logging.warning}
+LOGGING_DICT = {"debug": logging.DEBUG,
+                "info": logging.INFO,
+                "warning": logging.WARNING}
 downsampling = 4
 
 
@@ -105,7 +105,6 @@ def main(_) -> None:
     tf.config.experimental.set_memory_growth(gpus[0], True)
     
     run_autoencoder_exploration(root_dir_path=FLAGS.root_dir, series_dir_path=FLAGS.series_dir, batch_size=FLAGS.batch_size)
-    
 
 
 if __name__ == '__main__':
