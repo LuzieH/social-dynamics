@@ -104,7 +104,7 @@ def main(_) -> None:
     gpus = tf.config.experimental.list_physical_devices('GPU')
     tf.config.experimental.set_memory_growth(gpus[0], True)
     
-    run_autoencoder_exploration(root_dir_path=FLAGS.root_dir, series_dir_path=FLAGS.series_dir, batch_size=FLAGS.batch_size)
+    run_autoencoder_exploration(root_dir=FLAGS.root_dir, series_dir=FLAGS.series_dir, batch_size=FLAGS.batch_size)
 
 
 if __name__ == '__main__':
