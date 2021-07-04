@@ -1,3 +1,4 @@
+from absl import logging
 import gin
 import numpy as np
 from pathlib import Path
@@ -115,8 +116,12 @@ def generate_experiment_params_batch(all_results_dir: Path, experiment_params_li
     # might collide on the same locks. As such it is important not to pass a seed here.
     rng = np.random.default_rng()
     rng.shuffle(to_do_experiments)
+    
+    experiments_batch = to_do_experiments[:batch_size]
+    
+    logging.info("Generating batch of size {}".format(len(experiments_batch)))
 
-    return to_do_experiments[:batch_size]
+    return experiments_batch
 
 
 def check_lock(results_path: Path) -> bool:

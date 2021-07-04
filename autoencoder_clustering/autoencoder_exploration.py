@@ -43,6 +43,7 @@ def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int)
     rng = np.random.default_rng()
     rng.shuffle(keys)
     for key in keys:
+        logging.info("Starting to work on key: {}".format(key))
         model_type, input_type = key.split("-")
         experiment_params_list = [{"key": key, "model_index": model_index}
                                   for model_index in range(len(models_kwargs[key]))]
