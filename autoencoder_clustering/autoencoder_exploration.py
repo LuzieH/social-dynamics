@@ -14,9 +14,10 @@ from social_dynamics.autoencoder_utils import get_dnn_autoencoder_model, get_cnn
 import tensorflow as tf
 from tensorflow.keras.losses import MSE
 
-from tqdm import tqdm
 
-
+LOGGING_DICT = {"debug": logging.debug,
+                "info": logging.info,
+                "warning": logging.warning}
 downsampling = 4
 
 
@@ -62,7 +63,7 @@ def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int)
                 model_index = experiment_params["model_index"]
                 experiment_name = generate_experiment_name(key, model_index)
                 
-                model_results_path = results_dir_path.joinpath()
+                model_results_path = results_dir_path.joinpath(experiment_name)
                 if not utility.check_lock(model_results_path): continue
                 
                 utility.acquire_lock(model_results_path)
@@ -98,7 +99,7 @@ def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int)
 
 
 def main(_) -> None:
-    logging.set_verbosity(logging.WARNING)
+    logging.set_verbosity(LOGGING_DICT[FLAGS.logging])
     
     gpus = tf.config.experimental.list_physical_devices('GPU')
     tf.config.experimental.set_memory_growth(gpus[0], True)
@@ -113,6 +114,8 @@ if __name__ == '__main__':
     flags.DEFINE_string('series_dir', os.getenv('TEST_UNDECLARED_OUTPUTS_DIR'),
                         'Path to the experiment series to train the autoencoders on.')
     flags.DEFINE_integer('batch_size', 10, 'Batch size for the experiment loop.')
+    flags.DEFINE_string('logging', 'warning', 'Logging level. Must be a string in '
+                        '["debug", "info", "warning"]')
     FLAGS = flags.FLAGS
     flags.mark_flag_as_required('root_dir')
     flags.mark_flag_as_required('series_dir')
