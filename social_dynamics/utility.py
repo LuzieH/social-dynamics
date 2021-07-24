@@ -73,6 +73,8 @@ def setup_metrics(checkpoint_interval: int, metrics_interval: int, metrics: List
     return built_metrics
 
 
+#FIXME This function will return a list with experiments to be done even if they all have a lock already.
+# This leads the code calling this function to iterate endlessly on new batches of locked experiments until they are completed...
 def generate_experiment_params_batch(all_results_dir: Path, experiment_params_list: List[ExperimentParams],
                                      experiment_name_generator: Callable[[ExperimentParams], str],
                                      batch_size: int) -> List[ExperimentParams]:
@@ -119,6 +121,7 @@ def generate_experiment_params_batch(all_results_dir: Path, experiment_params_li
     
     experiments_batch = to_do_experiments[:batch_size]
     
+    #FIXME This doesn't properly log as expected. Not sure how abseil logging works...
     logging.info("Generating batch of size {}".format(len(experiments_batch)))
 
     return experiments_batch
