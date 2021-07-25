@@ -58,7 +58,7 @@ def create_dataset(series_dir: Path, downsampling: int, model_type: str,
 
     example_file = next(series_dir.iterdir()).joinpath("StateMetric", "results_t200000.npy")
     shape = tf.TensorShape(load_numpy_file(tf.convert_to_tensor(str(example_file.absolute()))).shape)
-    n_agents, n_options = shape.as_list()
+    _, n_agents, n_options = shape.as_list()
 
     def dnn_data_preprocessing(exp_data: tf.Tensor) -> tf.Tensor:
         tensor = tf.reshape(exp_data, [-1])
