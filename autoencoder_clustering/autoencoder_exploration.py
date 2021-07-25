@@ -3,6 +3,7 @@ from absl import flags
 from absl import logging
 
 from functools import partial
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 from pathlib import Path
@@ -23,12 +24,32 @@ def generate_experiment_name(key: str, model_index: int) -> str:
     return "{}-{}".format(key, model_index)
 
 
+def generate_save_prediction_plots(model_results_path: Path, y_true: np.ndarray, y_pred: np.ndarray,
+                                   mses: np.ndarray, n_agents: int, n_options: int) -> None:
+    """Creates and saves in a target folder the images for the autoencoder prediction vs truth.
+    This is done for 10 random samples from the dataset and for the worst performing 10 samples (measured 
+    using mse).
+
+    Args:
+        model_results_path (Path): Path where to save the generated plots.
+        y_true (np.ndarray): True samples that were fed to the model.
+        y_pred (np.ndarray): Predictions of the model for these true samples.
+        mses (np.ndarray): Mean Squared Error computed for every sample.
+        n_agents (int): Number of agents in the input experiments; used to reconstruct the shape
+                    of the samples together with n_options.
+        n_options (int): Number of options in the input experiments; used to reconstruct the shape
+                    of the samples together with n_agents.
+    """
+    raise NotImplementedError()
+    
+
+
 def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int) -> None:
     root_dir_path = Path(root_dir)
     results_dir_path = root_dir_path.joinpath("autoencoders_results")
     series_dir_path = Path(series_dir)
 
-    datasets = load_all_datasets(series_dir=series_dir_path, downsampling=downsampling)
+    datasets, n_agents, n_options = load_all_datasets(series_dir=series_dir_path, downsampling=downsampling)
 
     input_shapes = determine_input_shapes(datasets)
 
@@ -85,6 +106,12 @@ def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int)
                 model_results_path.mkdir(parents=True, exist_ok=True)
                 np.save(model_results_path.joinpath("history.npy"), model_hist.history)
                 np.save(model_results_path.joinpath("mses.npy"), mses)
+                generate_save_prediction_plots(model_results_path=model_results_path,
+                                               y_true=y_true,
+                                               y_preds=y_preds,
+                                               mses=mses,
+                                               n_agents=n_agents,
+                                               n_options=n_options)
 
                 tf.keras.backend.clear_session()
 

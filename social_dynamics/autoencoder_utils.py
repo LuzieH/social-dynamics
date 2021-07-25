@@ -27,7 +27,7 @@ def compute_embedding_length(time_series_length: int, layers_kwargs: List[Dict[s
     return current_len
 
 
-def create_dataset(series_dir: Path, downsampling: int, model_type: str, cut: bool) -> tf.data.Dataset:
+def create_dataset(series_dir: Path, downsampling: int, model_type: str, cut: bool) -> Tuple[tf.data.Dataset, int, int]:
     """Creates a tensorflow.data.Dataset object to be used for training of the autoencoder.
 
     Args:
@@ -43,7 +43,8 @@ def create_dataset(series_dir: Path, downsampling: int, model_type: str, cut: bo
         ValueError: If model_type is not supported.
 
     Returns:
-        tf.data.Dataset: Dataset to be used for training the autoencoder.
+        Tuple[tf.data.Dataset, int, int]: Dataset to be used for training the autoencoder, and two integers
+                    for the n_agents and n_options of the loaded samples.
     """
     if model_type not in MODEL_TYPES:
         raise ValueError(f"Invalid model_type ({model_type})argument passed to the function.")
@@ -56,6 +57,7 @@ def create_dataset(series_dir: Path, downsampling: int, model_type: str, cut: bo
 
     example_file = next(series_dir.iterdir()).joinpath("StateMetric", "results_t200000.npy")
     shape = tf.TensorShape(load_numpy_file(tf.convert_to_tensor(str(example_file.absolute()))).shape)
+    n_agents, n_options = shape.as_list()
 
     def dnn_data_preprocessing(exp_data: tf.Tensor) -> tf.Tensor:
         tensor = tf.reshape(exp_data, [-1])
@@ -76,10 +78,10 @@ def create_dataset(series_dir: Path, downsampling: int, model_type: str, cut: bo
     file_pattern = str(series_dir) + "/*/StateMetric/results_t200000.npy"
     dataset = tf.data.Dataset.list_files(file_pattern=file_pattern, shuffle=False)
     dataset = dataset.map(data_pipeline, num_parallel_calls=tf.data.experimental.AUTOTUNE).cache()
-    return dataset
+    return dataset, n_agents, n_options
 
 
-def load_all_datasets(series_dir: Path, downsampling: int) -> Dict[str, tf.data.Dataset]:
+def load_all_datasets(series_dir: Path, downsampling: int) -> Tuple[Dict[str, tf.data.Dataset], int, int]:
     """Calls the create_dataset function for all model_types and input_types to be used.
     Stores the resulting datasets in a dictionary which is returned.
 
@@ -89,7 +91,8 @@ def load_all_datasets(series_dir: Path, downsampling: int) -> Dict[str, tf.data.
         downsampling (int): Downsampling factor applied to the results.
 
     Returns:
-        Dict[str, tf.data.Dataset]: Dictionary storing all the datasets loaded with their unique keys. 
+        Tuple[Dict[str, tf.data.Dataset], int, int]: Dictionary storing all the datasets loaded with their
+                    unique keys, and two integers for the n_agents and n_options of the loaded samples.
     """
 
     datasets = dict()
@@ -97,13 +100,13 @@ def load_all_datasets(series_dir: Path, downsampling: int) -> Dict[str, tf.data.
         for input_type in INPUT_TYPES:
             key = "-".join((model_type, input_type))
 
-            dataset = create_dataset(series_dir=series_dir,
-                                     downsampling=downsampling,
-                                     model_type=model_type,
-                                     cut=(input_type == "cut"))
+            dataset, n_agents, n_options = create_dataset(series_dir=series_dir,
+                                                          downsampling=downsampling,
+                                                          model_type=model_type,
+                                                          cut=(input_type == "cut"))
             datasets[key] = dataset
 
-    return datasets
+    return datasets, n_agents, n_options
 
 
 def determine_input_shapes(datasets: Dict[str, tf.data.Dataset]) -> Dict[str, Tuple[int]]:
