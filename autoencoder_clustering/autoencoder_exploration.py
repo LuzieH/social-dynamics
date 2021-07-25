@@ -3,15 +3,13 @@ from absl import flags
 from absl import logging
 
 from functools import partial
-import matplotlib.pyplot as plt
 import numpy as np
 import os
 from pathlib import Path
 import pickle
 
 from social_dynamics import utility
-from social_dynamics.autoencoder_utils import determine_input_shapes, load_all_datasets
-from social_dynamics.autoencoder_utils import get_dnn_autoencoder_model, get_cnn_autoencoder_model
+from social_dynamics import autoencoder_utils
 
 import tensorflow as tf
 from tensorflow.keras.losses import MSE
@@ -24,34 +22,15 @@ def generate_experiment_name(key: str, model_index: int) -> str:
     return "{}-{}".format(key, model_index)
 
 
-def generate_save_prediction_plots(model_results_path: Path, y_true: np.ndarray, y_pred: np.ndarray,
-                                   mses: np.ndarray, n_agents: int, n_options: int) -> None:
-    """Creates and saves in a target folder the images for the autoencoder prediction vs truth.
-    This is done for 10 random samples from the dataset and for the worst performing 10 samples (measured 
-    using mse).
-
-    Args:
-        model_results_path (Path): Path where to save the generated plots.
-        y_true (np.ndarray): True samples that were fed to the model.
-        y_pred (np.ndarray): Predictions of the model for these true samples.
-        mses (np.ndarray): Mean Squared Error computed for every sample.
-        n_agents (int): Number of agents in the input experiments; used to reconstruct the shape
-                    of the samples together with n_options.
-        n_options (int): Number of options in the input experiments; used to reconstruct the shape
-                    of the samples together with n_agents.
-    """
-    raise NotImplementedError()
-    
-
-
 def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int) -> None:
     root_dir_path = Path(root_dir)
     results_dir_path = root_dir_path.joinpath("autoencoders_results")
     series_dir_path = Path(series_dir)
 
-    datasets, n_agents, n_options = load_all_datasets(series_dir=series_dir_path, downsampling=downsampling)
+    datasets, n_agents, n_options = autoencoder_utils.load_all_datasets(series_dir=series_dir_path,
+                                                                        downsampling=downsampling)
 
-    input_shapes = determine_input_shapes(datasets)
+    input_shapes = autoencoder_utils.determine_input_shapes(datasets)
 
     with open(root_dir_path.joinpath('models_kwargs.pickle'), 'rb') as handle:
         models_kwargs = pickle.load(handle)
@@ -62,7 +41,7 @@ def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int)
     for key in keys:
         logging.info("Starting to work on key: {}".format(key))
         model_type, input_type = key.split("-")
-        experiment_params_list = [{"key": key, "model_index": model_index}
+        experiment_params_list = [{"key": key,"model_index": model_index}
                                   for model_index in range(len(models_kwargs[key]))]
 
         dataset = datasets[key].shuffle(buffer_size=20_000).batch(128).prefetch(tf.data.experimental.AUTOTUNE)
@@ -90,9 +69,13 @@ def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int)
 
                 model_kwargs = models_kwargs[key][model_index]
                 if model_type == "cnn":
-                    model = get_cnn_autoencoder_model(input_shape, **model_kwargs, sigmoid=False)
+                    model = autoencoder_utils.get_cnn_autoencoder_model(input_shape,
+                                                                        **model_kwargs,
+                                                                        sigmoid=False)
                 else:
-                    model = get_dnn_autoencoder_model(input_shape, **model_kwargs, sigmoid=False)
+                    model = autoencoder_utils.get_dnn_autoencoder_model(input_shape,
+                                                                        **model_kwargs,
+                                                                        sigmoid=False)
 
                 model_hist = model.fit(dataset, epochs=30, verbose=0)
                 y_preds = model.predict(y_true)
@@ -106,12 +89,12 @@ def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int)
                 model_results_path.mkdir(parents=True, exist_ok=True)
                 np.save(model_results_path.joinpath("history.npy"), model_hist.history)
                 np.save(model_results_path.joinpath("mses.npy"), mses)
-                generate_save_prediction_plots(model_results_path=model_results_path,
-                                               y_true=y_true,
-                                               y_preds=y_preds,
-                                               mses=mses,
-                                               n_agents=n_agents,
-                                               n_options=n_options)
+                autoencoder_utils.generate_prediction_plots(model_results_path=model_results_path,
+                                                            y_true=y_true,
+                                                            y_preds=y_preds,
+                                                            mses=mses,
+                                                            n_agents=n_agents,
+                                                            n_options=n_options)
 
                 tf.keras.backend.clear_session()
 

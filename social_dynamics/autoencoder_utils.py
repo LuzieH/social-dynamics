@@ -8,7 +8,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Conv1D, Conv1DTranspose, Dense, Dropout, SpatialDropout1D
 from tensorflow.keras.optimizers import Adam
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 MODEL_TYPES = ["cnn", "dnn"]
 INPUT_TYPES = ["complete", "cut"]
@@ -19,7 +19,7 @@ def compute_embedding_length(time_series_length: int, layers_kwargs: List[Dict[s
     for layer_kwargs in layers_kwargs:
         if current_len < layer_kwargs["kernel_size"]:
             return -1
-        
+
         current_len = (current_len - layer_kwargs["kernel_size"]) / layer_kwargs["strides"] + 1
         if current_len % 1:
             return -1
@@ -27,7 +27,8 @@ def compute_embedding_length(time_series_length: int, layers_kwargs: List[Dict[s
     return current_len
 
 
-def create_dataset(series_dir: Path, downsampling: int, model_type: str, cut: bool) -> Tuple[tf.data.Dataset, int, int]:
+def create_dataset(series_dir: Path, downsampling: int, model_type: str,
+                   cut: bool) -> Tuple[tf.data.Dataset, int, int]:
     """Creates a tensorflow.data.Dataset object to be used for training of the autoencoder.
 
     Args:
@@ -205,3 +206,72 @@ def plot_history(h, metric='acc'):
     plt.legend(loc='lower right')
     plt.xlabel('epoch')
     plt.show()
+
+
+def generate_prediction_plots(y_true: np.ndarray,
+                              y_pred: np.ndarray,
+                              mses: np.ndarray,
+                              n_agents: int,
+                              n_options: int,
+                              save_path: Optional[Path] = None) -> None:
+    """Creates and saves in a target folder the images for the autoencoder prediction vs truth.
+    This is done for 10 random samples from the dataset and for the worst performing 10 samples (measured 
+    using mse).
+
+    Args:
+        y_true (np.ndarray): True samples that were fed to the model. First two dimensions are
+                    expected to be of size n_samples, n_timesteps
+        y_pred (np.ndarray): Predictions of the model for these true samples. First two dimensions are
+                    expected to be of size n_samples, n_timesteps
+        mses (np.ndarray): Mean Squared Error computed for every sample.
+        n_agents (int): Number of agents in the input experiments; used to reconstruct the shape
+                    of the samples together with n_options.
+        n_options (int): Number of options in the input experiments; used to reconstruct the shape
+                    of the samples together with n_agents.
+        save_path (Optional[Path]): Path to save the generated plots. If not provided, plots
+                    are shown instead.
+    """
+    n_to_plot = 10
+
+    y_true = np.reshape(y_true, (*y_true.shape[:2], n_agents, n_options))
+    y_pred = np.reshape(y_pred, (*y_pred.shape[:2], n_agents, n_options))
+
+    rng = np.random.default_rng()
+    extracted_samples = rng.integers(low=0, high=y_true.shape[0], size=n_to_plot)
+
+    plt.figure(figsize=(20, 60))
+    for i in range(n_to_plot):
+        for option in range(n_options):
+            plt.subplot(n_options * n_to_plot, 2, 1 + i * 4 + option * 2)
+            for agent in range(n_agents):
+                plt.plot(y_true[extracted_samples[i]][:, agent, option], label=str(agent))
+        for option in range(n_options):
+            plt.subplot(n_options * n_to_plot, 2, 2 + i * 4 + option * 2)
+            for agent in range(n_agents):
+                plt.plot(y_pred[extracted_samples[i]][:, agent, option], label=str(agent))
+
+    plt.tight_layout()
+
+    if save_path is not None:
+        plt.savefig(save_path.joinpath("random_predictions.png"), dpi=150)
+
+    
+    worse_preds = np.argsort(mses)[-n_to_plot:]
+    
+    plt.figure(figsize=(20, 60))
+    for i in range(n_to_plot):
+        for option in range(n_options):
+            plt.subplot(n_options * n_to_plot, 2, 1 + i * 4 + option * 2)
+            for agent in range(n_agents):
+                plt.plot(y_true[worse_preds[i]][:, agent, option], label=str(agent))
+        for option in range(n_options):
+            plt.subplot(n_options * n_to_plot, 2, 2 + i * 4 + option * 2)
+            for agent in range(n_agents):
+                plt.plot(y_pred[worse_preds[i]][:, agent, option], label=str(agent))
+
+    plt.tight_layout()
+
+    if save_path is not None:
+        plt.savefig(save_path.joinpath("worst_predictions.png"), dpi=150)
+    else:
+        plt.show()
