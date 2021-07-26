@@ -78,23 +78,23 @@ def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int)
                                                                         sigmoid=False)
 
                 model_hist = model.fit(dataset, epochs=30, verbose=0)
-                y_preds = model.predict(y_true)
+                y_pred = model.predict(y_true)
                 # CNNs have bidimensional output (time x agent-option_channel) and thus MSEb needs
                 # to be averaged over two dimensions and not just one.
                 if model_type == "cnn":
-                    mses = np.mean(MSE(y_true, y_preds).numpy(), axis=-1)
+                    mses = np.mean(MSE(y_true, y_pred).numpy(), axis=-1)
                 else:
-                    mses = MSE(y_true, y_preds).numpy()
+                    mses = MSE(y_true, y_pred).numpy()
 
                 model_results_path.mkdir(parents=True, exist_ok=True)
                 np.save(model_results_path.joinpath("history.npy"), model_hist.history)
                 np.save(model_results_path.joinpath("mses.npy"), mses)
-                autoencoder_utils.generate_prediction_plots(model_results_path=model_results_path,
-                                                            y_true=y_true,
-                                                            y_preds=y_preds,
+                autoencoder_utils.generate_prediction_plots(y_true=y_true,
+                                                            y_pred=y_pred,
                                                             mses=mses,
                                                             n_agents=n_agents,
-                                                            n_options=n_options)
+                                                            n_options=n_options,
+                                                            save_path=model_results_path)
 
                 tf.keras.backend.clear_session()
 

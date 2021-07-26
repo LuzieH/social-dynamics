@@ -225,16 +225,17 @@ def generate_prediction_plots(y_true: np.ndarray,
                     expected to be of size n_samples, n_timesteps
         mses (np.ndarray): Mean Squared Error computed for every sample.
         n_agents (int): Number of agents in the input experiments; used to reconstruct the shape
-                    of the samples together with n_options.
+                    of the samples together with n_timesteps and n_options.
         n_options (int): Number of options in the input experiments; used to reconstruct the shape
-                    of the samples together with n_agents.
+                    of the samples together with n_timesteps and n_agents.
         save_path (Optional[Path]): Path to save the generated plots. If not provided, plots
                     are shown instead.
     """
     n_to_plot = 10
-
-    y_true = np.reshape(y_true, (*y_true.shape[:2], n_agents, n_options))
-    y_pred = np.reshape(y_pred, (*y_pred.shape[:2], n_agents, n_options))
+    
+    n_timesteps = int(y_true.size / (y_true.shape[0] * n_agents * n_options))
+    y_true = np.reshape(y_true, (y_true.shape[0], n_timesteps, n_agents, n_options))
+    y_pred = np.reshape(y_pred, (y_pred.shape[0], n_timesteps, n_agents, n_options))
 
     rng = np.random.default_rng()
     extracted_samples = rng.integers(low=0, high=y_true.shape[0], size=n_to_plot)
@@ -275,3 +276,5 @@ def generate_prediction_plots(y_true: np.ndarray,
         plt.savefig(save_path.joinpath("worst_predictions.png"), dpi=150)
     else:
         plt.show()
+    
+    plt.close('all')
