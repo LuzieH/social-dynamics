@@ -79,6 +79,14 @@ def run_experiment(root_dir: Path,
             for metric in metrics:
                 metric.save(save_path=experiment_run_dir, time_step=t)
                 metric.reset()
+    
+    for metric_dir in experiment_dir.iterdir():
+        files = sorted(metric_dir.iterdir(), key=os.path.getmtime)
+        files = [file for file in files]
+        results = [np.load(file) for file in files]
+        np.save(files[-1], np.concatenate(results, axis=0))
+        for file in files[:-1]:
+            file.unlink()
 
 
 def main(_) -> None:
