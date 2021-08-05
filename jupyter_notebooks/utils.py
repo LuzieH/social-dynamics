@@ -1,13 +1,13 @@
+from collections import defaultdict
 import io
-import os
-from pathlib import Path
-from typing import Dict, Optional
-
 import imageio
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+from pathlib import Path
 import ternary
 from tqdm import tqdm
+from typing import Dict, List, Optional
 
 
 def load_metrics(experiment_dir: Path) -> Dict[str, np.ndarray]:
@@ -119,5 +119,26 @@ def generate_gif(save_path: Path, state_metric: np.ndarray) -> None:
             buf.close()
 
 
+def autoencoder_sorting(path: Path) -> int:
+    """Function used as a key to sort the autoencoder results' paths.
+    Without using this ".../cnn-cut-10/" would come before ".../cnn-cut-2/"
 
+    Args:
+        path (Path): Path to an autoencoder's results
+
+    Returns:
+        int: integer to be used for sorting, corresponds to the model's id.
+    """
+    return int(path.name.split("-")[-1])
+
+
+def load_autoencoder_exploration_results(path: Path, model_input_types: List[str]) -> Dict[str, list]:
+    results = defaultdict(list)
+    for model_input_type in model_input_types:
+        for autoenc in sorted(path.iterdir(), key=autoencoder_sorting):
+            if model_input_type not in autoenc.name: continue
+            res = np.mean(np.load(autoenc.joinpath("mses.npy")))
+            results[model_input_type].append(res)
+    
+    return results
 
