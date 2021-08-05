@@ -185,7 +185,7 @@ def main(_) -> None:
 
     print("\n\nDETERMINING INPUT SHAPES\n\n")
     input_shapes = determine_input_shapes(
-        load_all_datasets(series_dir=root_path.joinpath(FLAGS.series_dir), downsampling=downsampling))
+        load_all_datasets(series_dir=root_path.joinpath(FLAGS.series_dir), downsampling=downsampling)[0])
 
     print("\n\nCOMPUTING N_PARAMS DISTRIBUTIONS\n\n")
     models_n_params = compute_n_params_distributions(models_kwargs=models_kwargs, input_shapes=input_shapes)
@@ -194,7 +194,7 @@ def main(_) -> None:
 
     # Saving the distributions of model complexities that have been computed for analysis
     for key in models_n_params:
-        np.save(root_path.joinpath(key + "-n_params_distribution" + ".npy"), models_n_params[key])
+        np.save(root_path.joinpath(key + "-n_params_distribution.npy"), models_n_params[key])
 
     # Saving the dict of model params. This will be iterated upon when exploring the possible
     # autoencoder choices
@@ -203,7 +203,7 @@ def main(_) -> None:
 
 
 if __name__ == '__main__':
-    flags.DEFINE_string('root_dir', None, 'Root directory for writing results of the metrics.')
+    flags.DEFINE_string('root_dir', None, 'Root directory where to save the models_kwargs generated.')
     flags.DEFINE_string('series_dir', None, 'Name to identify the experiment series')
     FLAGS = flags.FLAGS
     flags.mark_flag_as_required('root_dir')
