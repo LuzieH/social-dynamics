@@ -119,6 +119,15 @@ def generate_gif(save_path: Path, state_metric: np.ndarray) -> None:
             buf.close()
 
 
+def determine_root_path() -> Path:
+    if "fmalerba" in str(Path(".").resolve()):
+        return Path("/scratch/htc/fmalerba/")
+    elif "maler" in str(Path(".").resolve()):
+        return Path("C:/Users/maler/Federico/Lavoro/ZIB/") 
+    elif "luziehel" in str(Path(".").resolve()):
+        return Path("C:/Users/luziehel/Code/")
+
+
 def autoencoder_sorting(path: Path) -> int:
     """Function used as a key to sort the autoencoder results' paths.
     Without using this ".../cnn-cut-10/" would come before ".../cnn-cut-2/"
