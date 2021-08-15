@@ -73,8 +73,6 @@ def setup_metrics(checkpoint_interval: int, metrics_interval: int, metrics: List
     return built_metrics
 
 
-#FIXME This function will return a list with experiments to be done even if they all have a lock already.
-# This leads the code calling this function to iterate endlessly on new batches of locked experiments until they are completed...
 def generate_experiment_params_batch(all_results_dir: Path, experiment_params_list: List[ExperimentParams],
                                      experiment_name_generator: Callable[[ExperimentParams], str],
                                      batch_size: int) -> List[ExperimentParams]:
@@ -100,14 +98,16 @@ def generate_experiment_params_batch(all_results_dir: Path, experiment_params_li
         Union[None, np.ndarray]: None if there are no experiments left to run, list of experiment params
                     otherwise
     """
-    experiment_path_list = [
-        all_results_dir.joinpath(experiment_name_generator(**experiment_params))
+    experiment_name_list = [
+        experiment_name_generator(**experiment_params)
         for experiment_params in experiment_params_list
     ]
 
-    completed_experiments = np.array(list(all_results_dir.iterdir()))
+    completed_experiments = [path.name for path in all_results_dir.iterdir()]
+    ongoing_experiments = [path.name[:-4] for path in LOCKS_PATH.iterdir()]
     
-    to_do_experiments_indices = np.argwhere(~np.isin(experiment_path_list, completed_experiments))
+    to_do_experiments_indices = np.argwhere((~np.isin(experiment_name_list, completed_experiments) &
+                                             ~np.isin(experiment_name_list, ongoing_experiments)))
 
     to_do_experiments = [
         experiment_params for i, experiment_params in enumerate(experiment_params_list)
@@ -121,7 +121,6 @@ def generate_experiment_params_batch(all_results_dir: Path, experiment_params_li
     
     experiments_batch = to_do_experiments[:batch_size]
     
-    #FIXME This doesn't properly log as expected. Not sure how abseil logging works...
     logging.info("Generating batch of size {}".format(len(experiments_batch)))
 
     return experiments_batch
