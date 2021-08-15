@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -p gpu # partition
-#SBATCH --ntasks=3
+#SBATCH --ntasks=2
 #SBATCH --cpus-per-task=3
 #SBATCH --time=1-00:00:00
 #SBATCH -o /home/htc/fmalerba/logs/%x.out
@@ -16,8 +16,7 @@ export LD_LIBRARY_PATH=/usr/local/cuda-11/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_
 
 mkdir -p /scratch/htc/fmalerba/autoencoder_clustering/autoencoders_results
 
-srun --export=ALL --ntasks=3 -o /home/htc/fmalerba/logs/%x_%J_%t.out python code/social-dynamics/autoencoder_clustering/autoencoder_exploration.py \
---root_dir="/scratch/htc/fmalerba/autoencoder_clustering" \
+srun --export=ALL --ntasks=2 -o /home/htc/fmalerba/logs/%x_%J_%t.out python code/social-dynamics/autoencoder_clustering/autoencoder_exploration.py \
 --series_dir="/home/htc/fmalerba/experiments_results/2_opt-h_luzie-alpha_beta_gamma_delta_expl-0.0001t" \
 --batch_size=10 \
 --logging="info"
