@@ -134,3 +134,4 @@ dmypy.json
 jupyter_notebooks/*.gif
 jupyter_notebooks/plots
 jupyter_notebooks/Debug.ipynb
+jupyter_notebooks/tables
