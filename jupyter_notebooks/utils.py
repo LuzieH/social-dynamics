@@ -1,9 +1,9 @@
-from collections import defaultdict
 import io
 import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import pandas as pd
 from pathlib import Path
 import ternary
 from tqdm import tqdm
@@ -141,13 +141,20 @@ def autoencoder_sorting(path: Path) -> int:
     return int(path.name.split("-")[-1])
 
 
-def load_autoencoder_exploration_results(path: Path, model_input_types: List[str]) -> Dict[str, list]:
-    results = defaultdict(list)
+def load_autoencoder_exploration_results(path: Path, model_input_types: List[str]) -> pd.DataFrame:
+    results = pd.DataFrame(columns=["Model-Input Type", "Model ID", "MSE", "N. Params"])
     for model_input_type in model_input_types:
-        for autoenc in sorted(path.iterdir(), key=autoencoder_sorting):
+        n_params = np.load(path.joinpath(model_input_type + "-n_params_distribution.npy"))
+        for autoenc in sorted(path.joinpath('autoencoders_results').iterdir(), key=autoencoder_sorting):
             if model_input_type not in autoenc.name: continue
-            res = np.mean(np.load(autoenc.joinpath("mses.npy")))
-            results[model_input_type].append(res)
+            model_id = int(autoenc.name.split("-")[-1])
+            mse = np.mean(np.load(autoenc.joinpath("mses.npy")))
+            row = {"Model-Input Type": model_input_type,
+                   "Model ID": model_id,
+                   "MSE": mse,
+                   "N. Params": n_params[model_id]}
+            
+            results = results.append(row, ignore_index=True)
     
     return results
 
