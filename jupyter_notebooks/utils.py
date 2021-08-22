@@ -7,7 +7,7 @@ import pandas as pd
 from pathlib import Path
 import ternary
 from tqdm import tqdm
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 
 def load_metrics(experiment_dir: Path) -> Dict[str, np.ndarray]:
@@ -19,7 +19,7 @@ def load_metrics(experiment_dir: Path) -> Dict[str, np.ndarray]:
         files = sorted(metric.iterdir(), key=os.path.getmtime)
         results = [np.load(file) for file in files]
         metrics_results[metric.name] = np.concatenate(results, axis=0)
-    
+
     return metrics_results
 
 
@@ -34,15 +34,15 @@ def plot_agents_simplex(options: np.ndarray, save_path: Optional[Path] = None) -
     tax.left_axis_label("Option 3", fontsize=fontsize, offset=offset)
     tax.right_axis_label("Option 2", fontsize=fontsize, offset=offset)
     tax.bottom_axis_label("Option 1", fontsize=fontsize, offset=offset)
-    
+
     n_agents = options.shape[1]
     for agent in range(n_agents):
         tax.plot(options[:, agent, :], linewidth=1.0, label=str(agent))
     tax.ticks(axis='lbr', multiple=0.2, linewidth=1, tick_formats="%.1f")
-    
+
     plt.axis('off')
     tax.legend()
-    
+
     if save_path is not None:
         if not save_path.parent.exists():
             save_path.parent.mkdir(parents=True)
@@ -61,24 +61,24 @@ def plot_agents_option(agents: np.ndarray, save_path: Optional[Path] = None) -> 
         save_path: Path to save the figure in instead of plotting it.
     """
     n_agents, n_options = agents.shape[1:]
-    
+
     plt.figure(figsize=(14, 8))
     for option in range(n_options):
-        plt.subplot(n_options, 1, option+1)
+        plt.subplot(n_options, 1, option + 1)
         for agent in range(n_agents):
             plt.plot(agents[:, agent, option], label=str(agent))
             plt.legend()
-            plt.title("Option "+ str(option+1))
+            plt.title("Option " + str(option + 1))
 
     plt.tight_layout()
-    
+
     if save_path is not None:
         if not save_path.parent.exists():
             save_path.parent.mkdir(parents=True)
         plt.savefig(save_path)
         plt.close()
         return
-    
+
     plt.show()
 
 
@@ -93,13 +93,13 @@ def generate_gif(save_path: Path, state_metric: np.ndarray) -> None:
     """
     if state_metric.shape[2] != 2:
         raise ValueError("Cannot generate GIF for experiments with more than two options")
-    
-    x_low, y_low, x_high, y_high = *np.min(state_metric, axis=(0,1)), *np.max(state_metric, axis=(0,1))
+
+    x_low, y_low, x_high, y_high = *np.min(state_metric, axis=(0, 1)), *np.max(state_metric, axis=(0, 1))
 
     images_bufs = []
-    for i in tqdm(range(5, state_metric.shape[0]- 5)):
-        to_plot = state_metric[i:i+5]
-        
+    for i in tqdm(range(5, state_metric.shape[0] - 5)):
+        to_plot = state_metric[i:i + 5]
+
         plt.figure()
         for agent in range(state_metric.shape[1]):
             plt.plot(to_plot[:, agent, 0], to_plot[:, agent, 1])
@@ -123,7 +123,7 @@ def determine_root_path() -> Path:
     if "fmalerba" in str(Path(".").resolve()):
         return Path("/scratch/htc/fmalerba/")
     elif "maler" in str(Path(".").resolve()):
-        return Path("C:/Users/maler/Federico/Lavoro/ZIB/") 
+        return Path("C:/Users/maler/Federico/Lavoro/ZIB/")
     elif "luziehel" in str(Path(".").resolve()):
         return Path("C:/Users/luziehel/Code/")
 
@@ -149,18 +149,23 @@ def load_autoencoder_exploration_results(path: Path, model_input_types: List[str
             if model_input_type not in autoenc.name: continue
             model_id = int(autoenc.name.split("-")[-1])
             mse = np.mean(np.load(autoenc.joinpath("mses.npy")))
-            row = {"Model-Input Type": model_input_type,
-                   "Model ID": model_id,
-                   "MSE": mse,
-                   "N. Params": n_params[model_id]}
-            
+            row = {
+                "Model-Input Type": model_input_type,
+                "Model ID": model_id,
+                "MSE": mse,
+                "N. Params": n_params[model_id]
+            }
+
             results = results.append(row, ignore_index=True)
-    
+
     return results
 
 
-def select_autoencoder_model(model_input_type: str, results: pd.DataFrame, mode: str = 'random',
-                             start: Optional[float] = None, end: Optional[float] = None) -> str:
+def select_autoencoder_model(model_input_type: str,
+                             results: pd.DataFrame,
+                             mode: str = 'random',
+                             start: Optional[float] = None,
+                             end: Optional[float] = None) -> str:
     """Selects an autoencoder model from the ones in the results dataframe according to the given
     selection parameters.
 
@@ -182,24 +187,25 @@ def select_autoencoder_model(model_input_type: str, results: pd.DataFrame, mode:
     """
     if model_input_type not in (['any'] + np.unique(results['Model-Input Type']).tolist()):
         raise ValueError("model_input_type parameter received unexpected value.")
-    
+
     if model_input_type != 'any':
         results = results[results['Model-Input Type'] == model_input_type]
-    
+
     if mode == 'best':
-         # Select the best model according to MSE
+        # Select the best model according to MSE
         row = results[np.argmin(results['MSE'])]
     elif mode == 'mse':
         # Select a random model with MSE in [start, end]
         row = results[(start <= results['MSE']) & (results['MSE'] <= end)].sample(ignore_index=True)
     elif mode == 'n_params':
         # Select a random model with n_params in [start, end]
-        row = results[(start <= results['N. Params']) & (results['N. Params'] <= end)].sample(ignore_index=True)
+        row = results[(start <= results['N. Params']) &
+                      (results['N. Params'] <= end)].sample(ignore_index=True)
     elif mode == 'random':
         # Selects a random model
         row = results.sample(ignore_index=True)
     else:
         raise ValueError("mode parameter expected to be in ['best', 'mse', 'n_params', 'random']")
-    
+
     return row['Model-Input Type'][0] + '-' + str(row['Model ID'][0])
 
