@@ -79,7 +79,7 @@ def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int)
 
                 model_hist = model.fit(dataset, epochs=30, verbose=0)
                 y_pred = model.predict(y_true)
-                # CNNs have bidimensional output (time x agent-option_channel) and thus MSEb needs
+                # CNNs have bidimensional output (time x agent-option_channel) and thus MSE needs
                 # to be averaged over two dimensions and not just one.
                 if model_type == "cnn":
                     mses = np.mean(MSE(y_true, y_pred).numpy(), axis=-1)
