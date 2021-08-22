@@ -158,3 +158,29 @@ def load_autoencoder_exploration_results(path: Path, model_input_types: List[str
     
     return results
 
+
+def select_autoencoder_model(model_input_type: str, results: pd.DataFrame, mode: str = 'random',
+                             start: Optional[float] = None, end: Optional[float] = None) -> str:
+    if model_input_type not in (['any'] + np.unique(results['Model-Input Type']).tolist()):
+        raise ValueError("model_input_type parameter received unexpected value.")
+    
+    if model_input_type != 'any':
+        results = results[results['Model-Input Type'] == model_input_type]
+    
+    if mode == 'best':
+         # Select the best model according to MSE
+        row = results[np.argmin(results['MSE'])]
+    elif mode == 'mse':
+        # Select a random model with MSE in [start, end]
+        row = results[(start <= results['MSE']) & (results['MSE'] <= end)].sample(ignore_index=True)
+    elif mode == 'n_params':
+        # Select a random model with n_params in [start, end]
+        row = results[(start <= results['N. Params']) & (results['N. Params'] <= end)].sample(ignore_index=True)
+    elif mode == 'random':
+        # Selects a random model
+        row = results.sample(ignore_index=True)
+    else:
+        raise ValueError("mode parameter expected to be in ['best', 'mse', 'n_params', 'random']")
+    
+    return row['Model-Input Type'][0] + '-' + str(row['Model ID'][0])
+
