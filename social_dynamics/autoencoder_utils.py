@@ -71,11 +71,7 @@ def create_dataset(series_dir: Path, downsampling: int, model_type: str,
     preprocessing_func = dnn_data_preprocessing if model_type == "dnn" else cnn_data_preprocessing
 
     def data_pipeline(file_path: str) -> tf.Tensor:
-        [
-            exp_data,
-        ] = tf.py_function(load_numpy_file, [file_path], [
-            tf.float32,
-        ])
+        [exp_data,] = tf.py_function(load_numpy_file, [file_path], [tf.float32,])
         exp_data.set_shape(shape)
         inputs, outputs = preprocessing_func(exp_data)
         return inputs, outputs
