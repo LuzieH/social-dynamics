@@ -71,7 +71,11 @@ def create_dataset(series_dir: Path, downsampling: int, model_type: str,
     preprocessing_func = dnn_data_preprocessing if model_type == "dnn" else cnn_data_preprocessing
 
     def data_pipeline(file_path: str) -> tf.Tensor:
-        [exp_data,] = tf.py_function(load_numpy_file, [file_path], [tf.float32,])
+        [
+            exp_data,
+        ] = tf.py_function(load_numpy_file, [file_path], [
+            tf.float32,
+        ])
         exp_data.set_shape(shape)
         inputs, outputs = preprocessing_func(exp_data)
         return inputs, outputs
@@ -208,6 +212,21 @@ def plot_history(h, metric='acc'):
     plt.show()
 
 
+def plot_preds(fig_num: int, y_true: np.ndarray, y_pred: np.ndarray, n_agents: int, n_options: int) -> None:
+    plt.figure(num=fig_num)
+    n = y_true.shape[0]
+
+    for i in range(n):
+        for option in range(n_options):
+            plt.subplot(n_options * n, 2, 1 + i * 4 + option * 2)
+            for agent in range(n_agents):
+                plt.plot(y_true[i][:, agent, option], label=str(agent))
+        for option in range(n_options):
+            plt.subplot(n_options * n, 2, 2 + i * 4 + option * 2)
+            for agent in range(n_agents):
+                plt.plot(y_pred[i][:, agent, option], label=str(agent))
+
+
 def generate_prediction_plots(y_true: np.ndarray,
                               y_pred: np.ndarray,
                               mses: np.ndarray,
@@ -232,49 +251,36 @@ def generate_prediction_plots(y_true: np.ndarray,
                     are shown instead.
     """
     n_to_plot = 10
-    
+
     n_timesteps = int(y_true.size / (y_true.shape[0] * n_agents * n_options))
     y_true = np.reshape(y_true, (y_true.shape[0], n_timesteps, n_agents, n_options))
     y_pred = np.reshape(y_pred, (y_pred.shape[0], n_timesteps, n_agents, n_options))
 
+    plt.figure(num=1, figsize=(20, 60))
     rng = np.random.default_rng()
     extracted_samples = rng.integers(low=0, high=y_true.shape[0], size=n_to_plot)
-
-    plt.figure(figsize=(20, 60))
-    for i in range(n_to_plot):
-        for option in range(n_options):
-            plt.subplot(n_options * n_to_plot, 2, 1 + i * 4 + option * 2)
-            for agent in range(n_agents):
-                plt.plot(y_true[extracted_samples[i]][:, agent, option], label=str(agent))
-        for option in range(n_options):
-            plt.subplot(n_options * n_to_plot, 2, 2 + i * 4 + option * 2)
-            for agent in range(n_agents):
-                plt.plot(y_pred[extracted_samples[i]][:, agent, option], label=str(agent))
-
+    plot_preds(fig_num=1,
+               y_true=y_true[extracted_samples],
+               y_pred=y_pred[extracted_samples],
+               n_agents=n_agents,
+               n_options=n_options)
     plt.tight_layout()
 
     if save_path is not None:
         plt.savefig(save_path.joinpath("random_predictions.png"), dpi=150)
 
-    
+    plt.figure(num=2, figsize=(20, 60))
     worse_preds = np.argsort(mses)[-n_to_plot:]
-    
-    plt.figure(figsize=(20, 60))
-    for i in range(n_to_plot):
-        for option in range(n_options):
-            plt.subplot(n_options * n_to_plot, 2, 1 + i * 4 + option * 2)
-            for agent in range(n_agents):
-                plt.plot(y_true[worse_preds[i]][:, agent, option], label=str(agent))
-        for option in range(n_options):
-            plt.subplot(n_options * n_to_plot, 2, 2 + i * 4 + option * 2)
-            for agent in range(n_agents):
-                plt.plot(y_pred[worse_preds[i]][:, agent, option], label=str(agent))
-
+    plot_preds(fig_num=2,
+               y_true=y_true[worse_preds],
+               y_pred=y_pred[worse_preds],
+               n_agents=n_agents,
+               n_options=n_options)
     plt.tight_layout()
 
     if save_path is not None:
         plt.savefig(save_path.joinpath("worst_predictions.png"), dpi=150)
     else:
         plt.show()
-    
+
     plt.close('all')
