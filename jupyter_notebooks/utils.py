@@ -161,6 +161,25 @@ def load_autoencoder_exploration_results(path: Path, model_input_types: List[str
 
 def select_autoencoder_model(model_input_type: str, results: pd.DataFrame, mode: str = 'random',
                              start: Optional[float] = None, end: Optional[float] = None) -> str:
+    """Selects an autoencoder model from the ones in the results dataframe according to the given
+    selection parameters.
+
+    Args:
+        model_input_type (str): Model-Input type of the autoencoder to be selected. Should be contained in 
+                    the results dataframe or be 'any'
+        results (pd.DataFrame): Dataframe containing the results for all the models trained and evaluated.
+        mode (str, optional): Selection mode to be used. Defaults to 'random'.
+        start (Optional[float], optional): Start of the range where to sample the autoencoder from in cases
+                    where 'mode' is 'mse' or 'n_params'. Defaults to None.
+        end (Optional[float], optional): End of the range where to sample the autoencoder from in cases
+                    where 'mode' is 'mse' or 'n_params'. Defaults to None.
+
+    Raises:
+        ValueError: If model_input_type or mode are not acceptable values.
+
+    Returns:
+        str: Identifier for the model that was selected.
+    """
     if model_input_type not in (['any'] + np.unique(results['Model-Input Type']).tolist()):
         raise ValueError("model_input_type parameter received unexpected value.")
     
