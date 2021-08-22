@@ -209,3 +209,29 @@ def select_autoencoder_model(model_input_type: str,
 
     return row['Model-Input Type'][0] + '-' + str(row['Model ID'][0])
 
+
+def select_predictions(model_path: Path,
+                       mode: str,
+                       y_true: np.ndarray,
+                       n_agents: int,
+                       n_options: int,
+                       start: Optional[float] = None,
+                       end: Optional[float] = None) -> Tuple[np.ndarray, np.ndarray]:
+    y_pred = np.load(model_path.joinpath('predictions.npy'))
+    mses =  np.load(model_path.joinpath('mses.npy'))
+
+    n_timesteps = int(y_true.size / (y_true.shape[0] * n_agents * n_options))
+    y_true = np.reshape(y_true, (y_true.shape[0], n_timesteps, n_agents, n_options))
+    y_pred = np.reshape(y_pred, (y_pred.shape[0], n_timesteps, n_agents, n_options))
+
+    rng = np.random.default_rng()
+    if mode == 'mse':
+        indeces = rng.choice(np.argwhere((start <= mses) & (mses <= end)))
+    elif mode == 'random':
+        indeces = rng.choice(np.arange(y_true.shape[0]), size=5)
+    elif mode == 'worst':
+        indeces = np.argsort(mses)[-5:]
+    else:
+        raise ValueError("mode parameter expected to be in ['mse', 'random', 'worst']")
+
+    return y_true[indeces], y_pred[indeces]
