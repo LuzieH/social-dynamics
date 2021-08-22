@@ -212,6 +212,7 @@ def select_autoencoder_model(model_input_type: str,
 
 def select_predictions(model_path: Path,
                        mode: str,
+                       n_to_sample: int,
                        y_true: np.ndarray,
                        n_agents: int,
                        n_options: int,
@@ -226,11 +227,11 @@ def select_predictions(model_path: Path,
 
     rng = np.random.default_rng()
     if mode == 'mse':
-        indeces = rng.choice(np.argwhere((start <= mses) & (mses <= end)))
+        indeces = rng.choice(np.argwhere((start <= mses) & (mses <= end)).flatten(), size=n_to_sample, replace=False)
     elif mode == 'random':
-        indeces = rng.choice(np.arange(y_true.shape[0]), size=5)
+        indeces = rng.choice(np.arange(y_true.shape[0]), size=n_to_sample, replace=False)
     elif mode == 'worst':
-        indeces = np.argsort(mses)[-5:]
+        indeces = np.argsort(mses)[-n_to_sample:]
     else:
         raise ValueError("mode parameter expected to be in ['mse', 'random', 'worst']")
 
