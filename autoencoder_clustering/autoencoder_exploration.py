@@ -12,7 +12,9 @@ from social_dynamics import utility
 from social_dynamics import autoencoder_utils
 
 import tensorflow as tf
+from tensorflow.keras import Model
 from tensorflow.keras.losses import MSE
+
 
 LOGGING_DICT = {"debug": logging.DEBUG, "info": logging.INFO, "warning": logging.WARNING}
 downsampling = 4
@@ -85,11 +87,15 @@ def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int)
                     mses = np.mean(MSE(y_true, y_pred).numpy(), axis=-1)
                 else:
                     mses = MSE(y_true, y_pred).numpy()
+                
+                encoder = Model(model.input, model.get_layer('embedding').output)
+                embeddings = encoder.predict(y_true)
 
                 model_results_path.mkdir(parents=True, exist_ok=True)
                 np.save(model_results_path.joinpath("history.npy"), model_hist.history)
                 np.save(model_results_path.joinpath("mses.npy"), mses)
                 np.save(model_results_path.joinpath("predictions.npy"), y_pred)
+                np.save(model_results_path.joinpath("embeddings.npy"))
                 autoencoder_utils.generate_prediction_plots(y_true=y_true,
                                                             y_pred=y_pred,
                                                             mses=mses,
