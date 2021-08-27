@@ -95,7 +95,7 @@ def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int)
                 np.save(model_results_path.joinpath("history.npy"), model_hist.history)
                 np.save(model_results_path.joinpath("mses.npy"), mses)
                 np.save(model_results_path.joinpath("predictions.npy"), y_pred)
-                np.save(model_results_path.joinpath("embeddings.npy"))
+                np.save(model_results_path.joinpath("embeddings.npy"), embeddings)
                 autoencoder_utils.generate_prediction_plots(y_true=y_true,
                                                             y_pred=y_pred,
                                                             mses=mses,
