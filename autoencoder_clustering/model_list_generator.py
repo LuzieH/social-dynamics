@@ -63,8 +63,8 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
 
             return filters
         
-        min_n_layers = 10
-        max_n_layers = 13
+        min_n_layers = 7
+        max_n_layers = 10
         cnn_kwargs_list = []
         for n_layers in range(min_n_layers, max_n_layers+1):
             stridesss = np.array(list(product((1, 2), repeat=n_layers)))
