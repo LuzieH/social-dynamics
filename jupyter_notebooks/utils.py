@@ -193,7 +193,7 @@ def select_autoencoder_model(model_input_type: str,
 
     if mode == 'best':
         # Select the best model according to MSE
-        row = results[np.argmin(results['MSE'])]
+        row = results[results["Model ID"] == np.argmin(results['MSE'])].reset_index()
     elif mode == 'mse':
         # Select a random model with MSE in [start, end]
         row = results[(start <= results['MSE']) & (results['MSE'] <= end)].sample(ignore_index=True)
