@@ -209,6 +209,17 @@ def plot_history(h, metric='acc'):
 
 def plot_preds(axes: np.ndarray, y_true: np.ndarray, y_pred: np.ndarray, n_agents: int,
                n_options: int) -> None:
+    """Plots the given predictions with their corresponding ground-truth trajectories.
+
+    Args:
+        axes (np.ndarray): np.ndarray containing all the axes for the subplots that will be used.
+                    This is expected to be analogous to the output of a call as follows:
+                        fig, axes = plt.subplots(m, n)
+        y_true (np.ndarray): Array of ground-truth trajectories to be plotted.
+        y_pred (np.ndarray): Array of autoencoder predictions for the given trajectories.
+        n_agents (int): Number of agents in the given experiments. Necessary to reshape.
+        n_options (int): Number of options in the given experiments. Necessary to reshape.
+    """
     n = y_true.shape[0]
 
     n_timesteps = int(y_true.size / (n * n_agents * n_options))
