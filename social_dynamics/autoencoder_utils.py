@@ -211,6 +211,10 @@ def plot_history(h, metric='acc'):
 def plot_preds(fig_num: int, y_true: np.ndarray, y_pred: np.ndarray, n_agents: int, n_options: int) -> None:
     plt.figure(num=fig_num)
     n = y_true.shape[0]
+    
+    n_timesteps = int(y_true.size / (n * n_agents * n_options))
+    y_true = np.reshape(y_true, (n, n_timesteps, n_agents, n_options))
+    y_pred = np.reshape(y_pred, (n, n_timesteps, n_agents, n_options))
 
     for i in range(n):
         for option in range(n_options):
@@ -234,9 +238,11 @@ def select_predictions(mode: str,
                        end: Optional[float] = None) -> Tuple[np.ndarray, np.ndarray]:
     rng = np.random.default_rng()
     if mode == 'clusters':
-        indeces = rng.choice(np.argwhere(clusters == selected_cluster).flatten(), size=n_to_sample, replace=False)
+        indeces = rng.choice(np.argwhere(clusters == selected_cluster).flatten(),
+                             size=n_to_sample, replace=False)
     elif mode == 'mse':
-        indeces = rng.choice(np.argwhere((start <= mses) & (mses <= end)).flatten(), size=n_to_sample, replace=False)
+        indeces = rng.choice(np.argwhere((start <= mses) & (mses <= end)).flatten(),
+                             size=n_to_sample, replace=False)
     elif mode == 'random':
         indeces = rng.choice(np.arange(y_true.shape[0]), size=n_to_sample, replace=False)
     elif mode == 'worst':
@@ -271,10 +277,6 @@ def generate_prediction_plots(y_true: np.ndarray,
                     are shown instead.
     """
     n_to_plot = 10
-
-    n_timesteps = int(y_true.size / (y_true.shape[0] * n_agents * n_options))
-    y_true = np.reshape(y_true, (y_true.shape[0], n_timesteps, n_agents, n_options))
-    y_pred = np.reshape(y_pred, (y_pred.shape[0], n_timesteps, n_agents, n_options))
 
     plt.figure(num=1, figsize=(20, 60))
     trues, preds = select_predictions(mode='random', n_to_sample=n_to_plot, y_true=y_true, y_pred=y_pred)
