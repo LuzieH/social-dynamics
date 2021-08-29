@@ -212,30 +212,6 @@ def select_autoencoder_model(model_input_type: str,
     return row['Model-Input Type'][0] + '-' + str(row['Model ID'][0])
 
 
-def select_predictions(mode: str,
-                       n_to_sample: int,
-                       y_true: np.ndarray,
-                       y_pred: np.ndarray,
-                       clusters: Optional[np.ndarray] = None,
-                       selected_cluster: Optional[int] = None,
-                       mses: Optional[np.ndarray] = None,
-                       start: Optional[float] = None,
-                       end: Optional[float] = None) -> Tuple[np.ndarray, np.ndarray]:
-    rng = np.random.default_rng()
-    if mode == 'clusters':
-        indeces = rng.choice(np.argwhere(clusters == selected_cluster).flatten(), size=n_to_sample, replace=False)
-    elif mode == 'mse':
-        indeces = rng.choice(np.argwhere((start <= mses) & (mses <= end)).flatten(), size=n_to_sample, replace=False)
-    elif mode == 'random':
-        indeces = rng.choice(np.arange(y_true.shape[0]), size=n_to_sample, replace=False)
-    elif mode == 'worst':
-        indeces = np.argsort(mses)[-n_to_sample:]
-    else:
-        raise ValueError("mode parameter expected to be in ['clusters', 'mse', 'random', 'worst']")
-
-    return y_true[indeces], y_pred[indeces]
-
-
 class PCAPlotter:
     def __init__(self, X: Union[pd.DataFrame, np.ndarray], y: np.ndarray, classes: List[str]) -> None:
         """Plots 2D or 3D PCA for the given data. A maximum of 5 classes are supported.

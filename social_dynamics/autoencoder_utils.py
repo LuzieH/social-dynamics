@@ -223,6 +223,30 @@ def plot_preds(fig_num: int, y_true: np.ndarray, y_pred: np.ndarray, n_agents: i
                 plt.plot(y_pred[i][:, agent, option], label=str(agent))
 
 
+def select_predictions(mode: str,
+                       n_to_sample: int,
+                       y_true: np.ndarray,
+                       y_pred: np.ndarray,
+                       clusters: Optional[np.ndarray] = None,
+                       selected_cluster: Optional[int] = None,
+                       mses: Optional[np.ndarray] = None,
+                       start: Optional[float] = None,
+                       end: Optional[float] = None) -> Tuple[np.ndarray, np.ndarray]:
+    rng = np.random.default_rng()
+    if mode == 'clusters':
+        indeces = rng.choice(np.argwhere(clusters == selected_cluster).flatten(), size=n_to_sample, replace=False)
+    elif mode == 'mse':
+        indeces = rng.choice(np.argwhere((start <= mses) & (mses <= end)).flatten(), size=n_to_sample, replace=False)
+    elif mode == 'random':
+        indeces = rng.choice(np.arange(y_true.shape[0]), size=n_to_sample, replace=False)
+    elif mode == 'worst':
+        indeces = np.argsort(mses)[-n_to_sample:]
+    else:
+        raise ValueError("mode parameter expected to be in ['clusters', 'mse', 'random', 'worst']")
+
+    return y_true[indeces], y_pred[indeces]
+
+
 def generate_prediction_plots(y_true: np.ndarray,
                               y_pred: np.ndarray,
                               mses: np.ndarray,
@@ -253,11 +277,10 @@ def generate_prediction_plots(y_true: np.ndarray,
     y_pred = np.reshape(y_pred, (y_pred.shape[0], n_timesteps, n_agents, n_options))
 
     plt.figure(num=1, figsize=(20, 60))
-    rng = np.random.default_rng()
-    extracted_samples = rng.integers(low=0, high=y_true.shape[0], size=n_to_plot)
+    trues, preds = select_predictions(mode='random', n_to_sample=n_to_plot, y_true=y_true, y_pred=y_pred)
     plot_preds(fig_num=1,
-               y_true=y_true[extracted_samples],
-               y_pred=y_pred[extracted_samples],
+               y_true=trues,
+               y_pred=preds,
                n_agents=n_agents,
                n_options=n_options)
     plt.tight_layout()
@@ -266,10 +289,11 @@ def generate_prediction_plots(y_true: np.ndarray,
         plt.savefig(save_path.joinpath("random_predictions.png"), dpi=150)
 
     plt.figure(num=2, figsize=(20, 60))
-    worse_preds = np.argsort(mses)[-n_to_plot:]
+    trues, preds = select_predictions(mode='worst', n_to_sample=n_to_plot, y_true=y_true,
+                                      y_pred=y_pred, mses=mses)
     plot_preds(fig_num=2,
-               y_true=y_true[worse_preds],
-               y_pred=y_pred[worse_preds],
+               y_true=trues,
+               y_pred=preds,
                n_agents=n_agents,
                n_options=n_options)
     plt.tight_layout()
