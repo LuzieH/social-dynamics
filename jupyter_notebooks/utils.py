@@ -266,7 +266,7 @@ class PCAPlotter:
     def plotPCA_3D(self, save_path: Optional[Path] = None) -> None:
         pca = PCA(n_components=3)
         X = pca.fit_transform(self._X)
-        fig = plt.figure(dpi=1000)
+        fig = plt.figure(dpi=200)
         ax = Axes3D(fig, elev=-150, azim=110)
 
         for color, encoding, target_name in zip(self._colors, self._encodings, self._classes):
@@ -274,7 +274,7 @@ class PCAPlotter:
             ax.scatter(X[bool_class, 0], X[bool_class, 1], X[bool_class, 2], marker='.', color=color, s=7,
                        edgecolors='k', linewidths=0.07, label=target_name)
 
-        ax.set_title("First three PCA directions")
+        ax.set_title("First three PCA directions  (Explained Variance = {}%)".format(np.round(pca.explained_variance_ratio_, 3)*100))
         ax.set_xlabel("1st eigenvector")
         ax.w_xaxis.set_ticklabels([])
         ax.set_ylabel("2nd eigenvector")
@@ -292,14 +292,14 @@ class PCAPlotter:
     def plotPCA_2D(self, save_path: Optional[Path] = None) -> None:
         pca = PCA(n_components=2)
         X = pca.fit_transform(self._X)
-        plt.figure(dpi=1000)
+        plt.figure(dpi=200)
 
         for color, encoding, target_name in zip(self._colors, self._encodings, self._classes):
             bool_class = np.all(self._y == encoding, axis=1)
             plt.scatter(X[bool_class, 0], X[bool_class, 1], marker='.', color=color, s=7, edgecolors='k',
                         linewidths=0.07, label=target_name)
 
-        plt.title("2D PCA")
+        plt.title("2D PCA  (Explained Variance = {}%)".format(np.round(pca.explained_variance_ratio_, 3)*100))
         plt.legend(loc="best", shadow=False, scatterpoints=1)
 
         if save_path is not None:
