@@ -1,4 +1,3 @@
-from functools import partial
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
@@ -208,23 +207,23 @@ def plot_history(h, metric='acc'):
     plt.show()
 
 
-def plot_preds(fig_num: int, y_true: np.ndarray, y_pred: np.ndarray, n_agents: int, n_options: int) -> None:
-    plt.figure(num=fig_num)
+def plot_preds(axes: np.ndarray, y_true: np.ndarray, y_pred: np.ndarray, n_agents: int,
+               n_options: int) -> None:
     n = y_true.shape[0]
-    
+
     n_timesteps = int(y_true.size / (n * n_agents * n_options))
     y_true = np.reshape(y_true, (n, n_timesteps, n_agents, n_options))
     y_pred = np.reshape(y_pred, (n, n_timesteps, n_agents, n_options))
 
     for i in range(n):
         for option in range(n_options):
-            plt.subplot(n_options * n, 2, 1 + i * 4 + option * 2)
+            ax = axes[i * 2 + option, 0]
             for agent in range(n_agents):
-                plt.plot(y_true[i][:, agent, option], label=str(agent))
+                ax.plot(y_true[i][:, agent, option], label=str(agent))
         for option in range(n_options):
-            plt.subplot(n_options * n, 2, 2 + i * 4 + option * 2)
+            ax = axes[i * 2 + option, 1]
             for agent in range(n_agents):
-                plt.plot(y_pred[i][:, agent, option], label=str(agent))
+                ax.plot(y_pred[i][:, agent, option], label=str(agent))
 
 
 def select_predictions(mode: str,
@@ -239,10 +238,12 @@ def select_predictions(mode: str,
     rng = np.random.default_rng()
     if mode == 'clusters':
         indeces = rng.choice(np.argwhere(clusters == selected_cluster).flatten(),
-                             size=n_to_sample, replace=False)
+                             size=n_to_sample,
+                             replace=False)
     elif mode == 'mse':
         indeces = rng.choice(np.argwhere((start <= mses) & (mses <= end)).flatten(),
-                             size=n_to_sample, replace=False)
+                             size=n_to_sample,
+                             replace=False)
     elif mode == 'random':
         indeces = rng.choice(np.arange(y_true.shape[0]), size=n_to_sample, replace=False)
     elif mode == 'worst':
@@ -278,26 +279,21 @@ def generate_prediction_plots(y_true: np.ndarray,
     """
     n_to_plot = 10
 
-    plt.figure(num=1, figsize=(20, 60))
+    fig, axes = plt.subplots(n_to_plot * n_options, 2, figsize=(20, 60))
     trues, preds = select_predictions(mode='random', n_to_sample=n_to_plot, y_true=y_true, y_pred=y_pred)
-    plot_preds(fig_num=1,
-               y_true=trues,
-               y_pred=preds,
-               n_agents=n_agents,
-               n_options=n_options)
+    plot_preds(axes=axes, y_true=trues, y_pred=preds, n_agents=n_agents, n_options=n_options)
     plt.tight_layout()
 
     if save_path is not None:
         plt.savefig(save_path.joinpath("random_predictions.png"), dpi=150)
 
-    plt.figure(num=2, figsize=(20, 60))
-    trues, preds = select_predictions(mode='worst', n_to_sample=n_to_plot, y_true=y_true,
-                                      y_pred=y_pred, mses=mses)
-    plot_preds(fig_num=2,
-               y_true=trues,
-               y_pred=preds,
-               n_agents=n_agents,
-               n_options=n_options)
+    fig, axes = plt.subplots(n_to_plot * n_options, 2, figsize=(20, 60))
+    trues, preds = select_predictions(mode='worst',
+                                      n_to_sample=n_to_plot,
+                                      y_true=y_true,
+                                      y_pred=y_pred,
+                                      mses=mses)
+    plot_preds(axes=axes, y_true=trues, y_pred=preds, n_agents=n_agents, n_options=n_options)
     plt.tight_layout()
 
     if save_path is not None:
