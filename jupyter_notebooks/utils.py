@@ -1,10 +1,12 @@
 import io
 import imageio
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 import os
 import pandas as pd
 from pathlib import Path
+from sklearn.decomposition import PCA
 import ternary
 from tqdm import tqdm
 from typing import Dict, List, Optional, Tuple
@@ -236,3 +238,73 @@ def select_predictions(model_path: Path,
         raise ValueError("mode parameter expected to be in ['mse', 'random', 'worst']")
 
     return y_true[indeces], y_pred[indeces]
+
+
+class PCAPlotter:
+    def __init__(self, X: pd.DataFrame, y: np.ndarray, classes: List[str]) -> None:
+        """Plots 2D or 3D PCA for the given data. A maximum of 5 classes are supported.
+
+        Args:
+            X (pd.DataFrame): Dataset to be transformed and plotted.
+            y (np.ndarray): Lables for the given dataset provided as a matrix of one-hot
+                        encoded vectors.
+            classes (List[str]): Ordered list of names for the different classes.
+
+        Raises:
+            ValueError: If X or y are of the incorrect type.
+        """
+        self._colors = ['xkcd:orange', 'xkcd:sky blue', 'xkcd:blue', 'xkcd:green', 'xkcd:red']
+        if not isinstance(X, pd.DataFrame):
+            raise ValueError("X parameter should be a Pandas dataframe")
+        elif not isinstance(y, np.ndarray):
+            raise ValueError("The y vector should be a numpy array")
+        self._X = X
+        self._y = y
+        self._classes = classes
+        self._encodings = [[1*(a == i) for a in range(len(classes))] for i in range(len(classes))]
+
+    def plotPCA_3D(self, save_path: Optional[Path] = None) -> None:
+        pca = PCA(n_components=3)
+        X = pca.fit_transform(self._X)
+        fig = plt.figure(dpi=1000)
+        ax = Axes3D(fig, elev=-150, azim=110)
+
+        for color, encoding, target_name in zip(self._colors, self._encodings, self._classes):
+            bool_class = np.all(self._y == encoding, axis=1)
+            ax.scatter(X[bool_class, 0], X[bool_class, 1], X[bool_class, 2], marker='.', color=color, s=7,
+                       edgecolors='k', linewidths=0.07, label=target_name)
+
+        ax.set_title("First three PCA directions")
+        ax.set_xlabel("1st eigenvector")
+        ax.w_xaxis.set_ticklabels([])
+        ax.set_ylabel("2nd eigenvector")
+        ax.w_yaxis.set_ticklabels([])
+        ax.set_zlabel("3rd eigenvector")
+        ax.w_zaxis.set_ticklabels([])
+        ax.legend()
+
+        if save_path is not None:
+            plt.savefig(save_path, dpi='figure')
+            plt.close()
+        else:
+            plt.show()
+
+    def plotPCA_2D(self, save_path: Optional[Path] = None) -> None:
+        pca = PCA(n_components=2)
+        X = pca.fit_transform(self._X)
+        plt.figure(dpi=1000)
+
+        for color, encoding, target_name in zip(self._colors, self._encodings, self._classes):
+            bool_class = np.all(self._y == encoding, axis=1)
+            plt.scatter(X[bool_class, 0], X[bool_class, 1], marker='.', color=color, s=7, edgecolors='k',
+                        linewidths=0.07, label=target_name)
+
+        plt.title("2D PCA")
+        plt.legend(loc="best", shadow=False, scatterpoints=1)
+
+        if save_path is not None:
+            plt.savefig(save_path, dpi='figure')
+            plt.close()
+        else:
+            plt.show()
+
