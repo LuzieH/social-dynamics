@@ -9,7 +9,7 @@ from pathlib import Path
 from sklearn.decomposition import PCA
 import ternary
 from tqdm import tqdm
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 
 def load_metrics(experiment_dir: Path) -> Dict[str, np.ndarray]:
@@ -241,11 +241,11 @@ def select_predictions(model_path: Path,
 
 
 class PCAPlotter:
-    def __init__(self, X: pd.DataFrame, y: np.ndarray, classes: List[str]) -> None:
+    def __init__(self, X: Union[pd.DataFrame, np.ndarray], y: np.ndarray, classes: List[str]) -> None:
         """Plots 2D or 3D PCA for the given data. A maximum of 5 classes are supported.
 
         Args:
-            X (pd.DataFrame): Dataset to be transformed and plotted.
+            X (Union[pd.DataFrame, np.ndarray]): Dataset to be transformed and plotted.
             y (np.ndarray): Lables for the given dataset provided as a matrix of one-hot
                         encoded vectors.
             classes (List[str]): Ordered list of names for the different classes.
@@ -254,8 +254,8 @@ class PCAPlotter:
             ValueError: If X or y are of the incorrect type.
         """
         self._colors = ['xkcd:orange', 'xkcd:sky blue', 'xkcd:blue', 'xkcd:green', 'xkcd:red']
-        if not isinstance(X, pd.DataFrame):
-            raise ValueError("X parameter should be a Pandas dataframe")
+        if not (isinstance(X, pd.DataFrame) or isinstance(X, np.ndarray)):
+            raise ValueError("X parameter should be a Pandas dataframeor numpy matrix")
         elif not isinstance(y, np.ndarray):
             raise ValueError("The y vector should be a numpy array")
         self._X = X
