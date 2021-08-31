@@ -9,8 +9,7 @@ from tensorflow.keras.optimizers import Adam
 
 from typing import Dict, List, Optional, Tuple
 
-MODEL_TYPES = ["cnn", "dnn"]
-INPUT_TYPES = ["complete", "cut"]
+MODEL_INPUT_TYPES = ["cnn-complete", "cnn-cut", "dnn-complete", "dnn-cut", "dnn-batched_complete"]
 
 
 def compute_embedding_length(time_series_length: int, layers_kwargs: List[Dict[str, int]]) -> int:
@@ -26,18 +25,16 @@ def compute_embedding_length(time_series_length: int, layers_kwargs: List[Dict[s
     return current_len
 
 
-def create_dataset(series_dir: Path, downsampling: int, model_type: str,
-                   cut: bool) -> Tuple[tf.data.Dataset, int, int]:
+def create_dataset(series_dir: Path, downsampling: int,
+                   model_input_type: str) -> Tuple[tf.data.Dataset, int, int]:
     """Creates a tensorflow.data.Dataset object to be used for training of the autoencoder.
 
     Args:
         series_dir (Path): Directory where the results for all experiments in the series can be found.
                     These will be used as samples to train the autoencoder.
         downsampling (int): Downsampling factor applied to the results.
-        model_type (str): String in MODEL_TYPES. This is necessary since the two kinds of models require
-                    different input shapes.
-        cut (bool): Boolean for whether to feed the last 25% of an experiment as input instead of
-                    the entire run.
+        model_input_type (str): String in MODEL_INPUT_TYPES. This is necessary since the two kinds of
+                    models require different input shapes.
 
     Raises:
         ValueError: If model_type is not supported.
@@ -46,33 +43,33 @@ def create_dataset(series_dir: Path, downsampling: int, model_type: str,
         Tuple[tf.data.Dataset, int, int]: Dataset to be used for training the autoencoder, and two integers
                     for the n_agents and n_options of the loaded samples.
     """
-    if model_type not in MODEL_TYPES:
-        raise ValueError(f"Invalid model_type ({model_type})argument passed to the function.")
+    if model_input_type not in MODEL_INPUT_TYPES:
+        raise ValueError(f"Invalid model_input_type ({model_input_type})argument passed to the function.")
+
+    model_type, input_type = model_input_type.split("-")
+    cut_flag = "cut" in input_type
 
     def load_numpy_file(file_path: tf.Tensor) -> np.ndarray:
         data = np.load(file_path.numpy().decode())[::downsampling]
-        if cut:
+        if cut_flag:
             data = data[int(data.shape[0] * 0.75):]
         return data.astype(np.float32)
 
     example_file = next(series_dir.iterdir()).joinpath("StateMetric", "results_t200000.npy")
     shape = tf.TensorShape(load_numpy_file(tf.convert_to_tensor(str(example_file.absolute()))).shape)
-    _, n_agents, n_options = shape.as_list()
+    time_steps, n_agents, n_options = shape.as_list()
 
-    def dnn_data_preprocessing(exp_data: tf.Tensor) -> tf.Tensor:
-        tensor = tf.reshape(exp_data, [-1])
+    # The value of -1 flattens any remaining dimensions.
+    model_input_shape = [-1] if (model_type == "dnn" and ('batched' not in input_type)) else [time_steps, -1]
+
+    def data_preprocessing(exp_data: tf.Tensor) -> tf.Tensor:
+        tensor = tf.reshape(exp_data, model_input_shape)
         return tensor, tensor
-
-    def cnn_data_preprocessing(exp_data: tf.Tensor) -> tf.Tensor:
-        tensor = tf.reshape(exp_data, [tf.shape(exp_data)[0], -1])
-        return tensor, tensor
-
-    preprocessing_func = dnn_data_preprocessing if model_type == "dnn" else cnn_data_preprocessing
 
     def data_pipeline(file_path: str) -> tf.Tensor:
         [exp_data,] = tf.py_function(load_numpy_file, [file_path], [tf.float32,])
         exp_data.set_shape(shape)
-        inputs, outputs = preprocessing_func(exp_data)
+        inputs, outputs = data_preprocessing(exp_data)
         return inputs, outputs
 
     file_pattern = str(series_dir) + "/*/StateMetric/results_t200000.npy"
@@ -96,15 +93,11 @@ def load_all_datasets(series_dir: Path, downsampling: int) -> Tuple[Dict[str, tf
     """
 
     datasets = dict()
-    for model_type in MODEL_TYPES:
-        for input_type in INPUT_TYPES:
-            key = "-".join((model_type, input_type))
-
-            dataset, n_agents, n_options = create_dataset(series_dir=series_dir,
-                                                          downsampling=downsampling,
-                                                          model_type=model_type,
-                                                          cut=(input_type == "cut"))
-            datasets[key] = dataset
+    for model_input_type in MODEL_INPUT_TYPES:
+        dataset, n_agents, n_options = create_dataset(series_dir=series_dir,
+                                                      downsampling=downsampling,
+                                                      model_input_type=model_input_type)
+        datasets[model_input_type] = dataset
 
     return datasets, n_agents, n_options
 
