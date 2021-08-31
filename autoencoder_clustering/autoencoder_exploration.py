@@ -96,8 +96,12 @@ def run_autoencoder_exploration(root_dir: str, series_dir: str, batch_size: int)
                 np.save(model_results_path.joinpath("mses.npy"), mses)
                 np.save(model_results_path.joinpath("predictions.npy"), y_pred)
                 np.save(model_results_path.joinpath("embeddings.npy"), embeddings)
-                autoencoder_utils.generate_prediction_plots(y_true=y_true,
-                                                            y_pred=y_pred,
+                # Batched dnn outputs have shape (n_samples, n_agents*n_options, n_timesteps)
+                # The last two dimensions must be swapped otherwise plotting is going to be off.
+                trues = y_true if "batched" not in input_type else np.transpose(y_true, axes=(0, 2, 1))
+                preds = y_pred if "batched" not in input_type else np.transpose(y_pred, axes=(0, 2, 1))
+                autoencoder_utils.generate_prediction_plots(y_true=trues,
+                                                            y_pred=preds,
                                                             mses=mses,
                                                             n_agents=n_agents,
                                                             n_options=n_options,
