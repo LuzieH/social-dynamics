@@ -48,6 +48,7 @@ def create_dataset(series_dir: Path, downsampling: int,
 
     model_type, input_type = model_input_type.split("-")
     cut_flag = "cut" in input_type
+    batched_flag = "batched" in input_type
 
     def load_numpy_file(file_path: tf.Tensor) -> np.ndarray:
         data = np.load(file_path.numpy().decode())[::downsampling]
@@ -64,6 +65,8 @@ def create_dataset(series_dir: Path, downsampling: int,
 
     def data_preprocessing(exp_data: tf.Tensor) -> tf.Tensor:
         tensor = tf.reshape(exp_data, model_input_shape)
+        if batched_flag:
+            tensor = tf.transpose(tensor)
         return tensor, tensor
 
     def data_pipeline(file_path: str) -> tf.Tensor:
