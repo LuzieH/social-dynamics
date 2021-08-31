@@ -109,13 +109,13 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
 
         return cnn_kwargs_list
 
-    models_kwargs["cnn-complete"] = generate_cnn_kwargs_list(1000)
-    models_kwargs["cnn-cut"] = generate_cnn_kwargs_list(250)
+    models_kwargs["cnn-complete"] = generate_cnn_kwargs_list(time_series_length=1000)
+    models_kwargs["cnn-cut"] = generate_cnn_kwargs_list(time_series_length=250)
 
     # DNN-type autoencoders.
     FIRST_LAYER_SIZES = (4096, 2048, 1024)
-    EMBEDDING_SIZES = (512, 256, 128)
-    dnn_kwargs = [{
+    FLAT_INPUT_EMBEDDING_SIZES = (512, 256, 128)
+    dnn_flat_input_kwargs = [{
         "layer_sizes":
             tuple([first_layer_size] + [
                 first_layer_size // np.prod(layers_reductions[:layer_id])
@@ -125,13 +125,33 @@ def generate_models_kwargs() -> Dict[str, List[ModelKwargs]]:
             dropout_rate
     }
                   for first_layer_size in FIRST_LAYER_SIZES
-                  for embedding_size in EMBEDDING_SIZES
+                  for embedding_size in FLAT_INPUT_EMBEDDING_SIZES
                   for n_layers in range(2, 6)
                   for layers_reductions in product((1, 2), repeat=n_layers)
                   for dropout_rate in (0.05, 0.1)
                   if (first_layer_size / np.prod(layers_reductions[:n_layers])) >= embedding_size]
 
-    models_kwargs["dnn-complete"] = models_kwargs["dnn-cut"] = dnn_kwargs
+    models_kwargs["dnn-complete"] = models_kwargs["dnn-cut"] = dnn_flat_input_kwargs
+
+    # Dividing by n_agents*n_options which I know to be 10*2=20 for the experiments I will be considering.
+    BATCHED_INPUT_EMBEDDING_SIZES = tuple([int(emb_size/20) for emb_size in FLAT_INPUT_EMBEDDING_SIZES])
+    dnn_batched_input_kwargs = [{
+        "layer_sizes":
+            tuple([first_layer_size] + [
+                first_layer_size // np.prod(layers_reductions[:layer_id])
+                for layer_id in range(1, n_layers + 1)
+            ] + [embedding_size]),
+        "dropout_rate":
+            dropout_rate
+    }
+                  for first_layer_size in FIRST_LAYER_SIZES
+                  for embedding_size in BATCHED_INPUT_EMBEDDING_SIZES
+                  for n_layers in range(2, 6)
+                  for layers_reductions in product((1, 2), repeat=n_layers)
+                  for dropout_rate in (0.05, 0.1)
+                  if (first_layer_size / np.prod(layers_reductions[:n_layers])) >= embedding_size]
+
+    models_kwargs["dnn-batched_complete"] = models_kwargs["dnn-batched_cut"] = dnn_batched_input_kwargs
 
     return models_kwargs
 
