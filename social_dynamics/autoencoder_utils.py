@@ -9,7 +9,7 @@ from tensorflow.keras.optimizers import Adam
 
 from typing import Dict, List, Optional, Tuple
 
-MODEL_INPUT_TYPES = ["cnn-complete", "cnn-cut", "dnn-complete", "dnn-cut", "dnn-batched_complete"]
+MODEL_INPUT_TYPES = ["cnn-complete", "cnn-cut", "dnn-complete", "dnn-cut", "dnn-batched_complete", "dnn-batched_cut"]
 
 
 def compute_embedding_length(time_series_length: int, layers_kwargs: List[Dict[str, int]]) -> int:
