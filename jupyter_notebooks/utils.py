@@ -9,7 +9,7 @@ from pathlib import Path
 from sklearn.decomposition import PCA
 import ternary
 from tqdm import tqdm
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union
 
 
 def load_metrics(experiment_dir: Path) -> Dict[str, np.ndarray]:
