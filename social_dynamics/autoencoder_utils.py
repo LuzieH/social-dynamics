@@ -121,7 +121,7 @@ def determine_input_shapes(datasets: Dict[str, tf.data.Dataset]) -> Dict[str, Tu
     input_shapes = dict()
     for dataset in datasets:
         for data in datasets[dataset]:
-            input_shapes[dataset] = data[0].shape
+            input_shapes[dataset] = tuple(data[0].shape.as_list())
             break
 
     return input_shapes
@@ -145,9 +145,9 @@ def get_dnn_autoencoder_model(input_shape: Tuple[int],
         model = Dropout(dropout_rate)(model)
 
     if sigmoid:
-        model = Dense(input_shape, activation='sigmoid')(model)
+        model = Dense(input_shape[-1], activation='sigmoid')(model)
     else:
-        model = Dense(input_shape, activation='linear')(model)
+        model = Dense(input_shape[-1], activation='linear')(model)
     model = Model(inputs=model_input, outputs=model)
     opt_m1 = Adam(learning_rate=0.00001)
     model.compile(optimizer=opt_m1, loss="mean_squared_error", metrics=['mse'])
